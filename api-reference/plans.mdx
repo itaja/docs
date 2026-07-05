@@ -1,5 +1,5 @@
 ---
-title: "Plans API — Create and Manage Billing Plans"
+title: "Plans API — Create and Manage Subscription Billing Plans"
 sidebarTitle: "Plans"
 description: "REST API reference for Itaja billing plans. Create, retrieve, update, and archive subscription plans with amount, currency, and interval settings."
 ---
@@ -170,6 +170,24 @@ Updates one or more fields on an existing plan. You can change the `name`, `desc
 <Note>
   Updating a plan's `amount` or `interval` does **not** affect any existing subscriptions. Only new subscriptions created after the update will use the new values.
 </Note>
+
+### Body parameters
+
+<ParamField body="name" type="string">
+  Updated display name for the plan.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated human-readable description.
+</ParamField>
+
+<ParamField body="amount" type="integer">
+  Updated billing amount in the smallest currency unit. Only affects new subscriptions created after this change.
+</ParamField>
+
+<ParamField body="trial_days" type="integer">
+  Updated number of free trial days. Only affects new subscriptions created after this change.
+</ParamField>
 
 ### Request example
 

@@ -1,5 +1,5 @@
 ---
-title: "How Subscriptions Work in Itaja"
+title: "Understanding Itaja Subscriptions and Billing Plans"
 sidebarTitle: "Subscriptions"
 description: "Understand the Itaja subscription model: plans, billing cycles, trial periods, pause and cancel workflows, and how recurring charges are triggered."
 ---
@@ -100,19 +100,19 @@ Pausing and cancelling are distinct actions with different consequences:
 **Pause a subscription:**
 
 ```bash
-POST /v1/subscriptions/{subscription_id}/pause
+POST https://api.getitaja.com/v1/subscriptions/{subscription_id}/pause
 ```
 
 **Resume a paused subscription:**
 
 ```bash
-POST /v1/subscriptions/{subscription_id}/resume
+POST https://api.getitaja.com/v1/subscriptions/{subscription_id}/resume
 ```
 
 **Cancel a subscription:**
 
 ```bash
-POST /v1/subscriptions/{subscription_id}/cancel
+POST https://api.getitaja.com/v1/subscriptions/{subscription_id}/cancel
 ```
 
 <Warning>

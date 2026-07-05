@@ -1,5 +1,5 @@
 ---
-title: "Manage Subscribers and Subscriptions"
+title: "Manage Subscribers and Subscriptions in Your Itaja Account"
 sidebarTitle: "Subscribers"
 description: "Add customers, create subscriptions, update billing details, pause or cancel subscriptions, and track subscriber status in the Itaja dashboard."
 ---
@@ -107,5 +107,5 @@ curl -X PATCH https://api.getitaja.com/v1/customers/cust_abc123 \
 Itaja will use the updated phone number and provider for all future billing attempts on subscriptions linked to this customer.
 
 <Tip>
-  Use the `metadata` field on both customer and subscription objects to store your own internal IDs — such as a `user_id` from your database or a `plan_tier` identifier. This makes it straightforward to cross-reference Itaja records with your own system without maintaining a separate mapping table.
+  Use the `metadata` field on both customer and subscription objects to store your own internal IDs — such as a `user_id` from your application or a `plan_tier` identifier. This makes it straightforward to cross-reference Itaja records with your own system without maintaining a separate mapping table.
 </Tip>

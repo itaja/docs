@@ -1,5 +1,5 @@
 ---
-title: "Webhooks API — Real-Time Payment Events"
+title: "Webhooks API — Receive Real-Time Event Notifications"
 sidebarTitle: "Webhooks"
 description: "Register webhook endpoints to receive real-time HTTP notifications when payments succeed, fail, or when subscription states change in Itaja."
 ---
@@ -26,15 +26,27 @@ Itaja emits the following event types. You can subscribe to any combination when
 
 ---
 
-## Registering a webhook
+## Create a webhook
+
+`POST /webhooks`
+
+Registers a new webhook endpoint. Itaja immediately begins delivering matching events to the URL you provide.
+
+### Body parameters
+
+<ParamField body="url" type="string" required>
+  The HTTPS URL of your endpoint. Itaja sends a `POST` request to this URL each time a subscribed event fires (e.g., `"https://yourapp.com/webhooks/itaja"`).
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  An array of event type strings to subscribe to (e.g., `["payment.succeeded", "payment.failed"]`). See the [Webhook events](#webhook-events) table above for all available values.
+</ParamField>
 
 ### Via the dashboard
 
 Go to **Settings → Webhooks → Add Endpoint**, enter your HTTPS URL, and select the events you want to receive.
 
-### Via the API
-
-Send a `POST` request to `/webhooks` with your endpoint URL and the list of events to subscribe to.
+### Request example
 
 ```bash
 curl -X POST https://api.getitaja.com/v1/webhooks \
@@ -53,6 +65,154 @@ curl -X POST https://api.getitaja.com/v1/webhooks \
     "events": ["payment.succeeded", "payment.failed", "subscription.cancelled"],
     "active": true,
     "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the webhook endpoint. Use this ID to retrieve, update, or delete the endpoint.
+</ResponseField>
+
+<ResponseField name="data.url" type="string">
+  The HTTPS URL Itaja delivers events to.
+</ResponseField>
+
+<ResponseField name="data.events" type="array">
+  The list of event types this endpoint is subscribed to.
+</ResponseField>
+
+<ResponseField name="data.active" type="boolean">
+  `true` when the endpoint is live and receiving events.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 timestamp of when the webhook endpoint was registered.
+</ResponseField>
+
+---
+
+## List all webhooks
+
+`GET /webhooks`
+
+Returns a list of all webhook endpoints registered for your account.
+
+### Request example
+
+```bash
+curl https://api.getitaja.com/v1/webhooks \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": "wh_mno345",
+      "url": "https://yourapp.com/webhooks/itaja",
+      "events": ["payment.succeeded", "payment.failed", "subscription.cancelled"],
+      "active": true,
+      "created_at": "2024-01-15T10:00:00Z"
+    }
+  ],
+  "meta": { "total": 1 }
+}
+```
+
+---
+
+## Retrieve a webhook
+
+`GET /webhooks/:id`
+
+Fetches a single webhook endpoint by its unique identifier.
+
+### Request example
+
+```bash
+curl https://api.getitaja.com/v1/webhooks/wh_mno345 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "wh_mno345",
+    "url": "https://yourapp.com/webhooks/itaja",
+    "events": ["payment.succeeded", "payment.failed", "subscription.cancelled"],
+    "active": true,
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Update a webhook
+
+`PATCH /webhooks/:id`
+
+Updates the endpoint URL or the list of subscribed events. Only the fields you provide are changed.
+
+### Body parameters
+
+<ParamField body="url" type="string">
+  New HTTPS URL for the endpoint.
+</ParamField>
+
+<ParamField body="events" type="array">
+  Replacement list of event type strings. This fully replaces the existing list — include all events you want to receive, not just the new ones.
+</ParamField>
+
+### Request example
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/webhooks/wh_mno345 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"events": ["payment.succeeded", "payment.failed", "subscription.cancelled", "subscription.past_due"]}'
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "wh_mno345",
+    "url": "https://yourapp.com/webhooks/itaja",
+    "events": ["payment.succeeded", "payment.failed", "subscription.cancelled", "subscription.past_due"],
+    "active": true,
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Delete a webhook
+
+`DELETE /webhooks/:id`
+
+Permanently removes the webhook endpoint. Itaja stops delivering events to the URL immediately.
+
+### Request example
+
+```bash
+curl -X DELETE https://api.getitaja.com/v1/webhooks/wh_mno345 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "wh_mno345",
+    "deleted": true
   }
 }
 ```
@@ -147,49 +307,3 @@ If your endpoint returns any HTTP status other than `2xx`, or if no response is 
 <Tip>
   Respond with HTTP `200` as quickly as possible — ideally before doing any heavy processing. Enqueue the payload and handle it asynchronously so you don't risk a timeout causing unnecessary retries.
 </Tip>
-
----
-
-## Managing webhook endpoints
-
-### List all webhooks
-
-`GET /webhooks`
-
-```bash
-curl https://api.getitaja.com/v1/webhooks \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```
-
-### Retrieve a webhook
-
-`GET /webhooks/:id`
-
-```bash
-curl https://api.getitaja.com/v1/webhooks/wh_mno345 \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```
-
-### Update a webhook
-
-`PATCH /webhooks/:id`
-
-Update the endpoint URL or the list of subscribed events.
-
-```bash
-curl -X PATCH https://api.getitaja.com/v1/webhooks/wh_mno345 \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"events": ["payment.succeeded", "payment.failed", "subscription.cancelled", "subscription.past_due"]}'
-```
-
-### Remove a webhook
-
-`DELETE /webhooks/:id`
-
-Permanently removes the webhook endpoint. Itaja stops delivering events to the URL immediately.
-
-```bash
-curl -X DELETE https://api.getitaja.com/v1/webhooks/wh_mno345 \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```

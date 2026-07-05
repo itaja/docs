@@ -1,7 +1,7 @@
 ---
-title: "Itaja REST API Reference"
+title: "Itaja REST API: Base URL, Formats, and Conventions"
 sidebarTitle: "Introduction"
-description: "Explore the Itaja REST API: base URLs, request format, pagination, rate limits, and versioning for managing subscriptions and payments."
+description: "Learn how to make requests to the Itaja API: base URL, request format, pagination, rate limits, idempotency, and versioning explained."
 ---
 
 The Itaja REST API gives you programmatic access to the full suite of subscription and payment management capabilities across 19+ African markets. You can create and manage plans, enroll customers, trigger recurring mobile money charges, and receive real-time status updates — all through a consistent, resource-oriented HTTP interface.
@@ -10,7 +10,7 @@ The Itaja REST API gives you programmatic access to the full suite of subscripti
 
 All API requests are made to the following base URL:
 
-```
+```text
 https://api.getitaja.com/v1
 ```
 
@@ -82,7 +82,7 @@ All list endpoints support cursor-free, page-based pagination via the `page` and
 
 The API enforces a limit of **100 requests per minute per API key**. If you exceed this limit, the API returns an HTTP `429` response with a `Retry-After` header indicating how many seconds to wait before retrying.
 
-```
+```http
 HTTP/1.1 429 Too Many Requests
 Retry-After: 12
 ```
@@ -121,4 +121,4 @@ Itaja uses a single API endpoint for both testing and production. The type of AP
 | `test_` | Sandbox | Requests are processed normally but **no real payments** are initiated |
 | `live_` | Production | Real mobile money transactions are executed; requires business verification |
 
-You can use your test key freely during development and CI without risk of charging real accounts. Switch to your live key only when you are ready to go live. See [Authentication](/api-reference/authentication) for details on generating and managing both key types.
+You can use your test key freely during development without risk of charging real accounts. Switch to your live key only when you are ready to go live. See [Authentication](/api-reference/authentication) for details on generating and managing both key types.

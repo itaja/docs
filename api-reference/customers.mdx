@@ -1,5 +1,5 @@
 ---
-title: "Customers API — Create and Manage Customers"
+title: "Customers API — Register and Manage Customer Records"
 sidebarTitle: "Customers"
 description: "REST API reference for Itaja customers. Register customers with their mobile money phone numbers and provider codes for subscription billing."
 ---
@@ -163,6 +163,28 @@ Updates one or more fields on an existing customer record. You can update `name`
 <Note>
   If you update `phone` or `provider`, make sure the new combination is valid — Itaja uses these fields to route all future charges for this customer's subscriptions.
 </Note>
+
+### Body parameters
+
+<ParamField body="name" type="string">
+  Updated full name for the customer.
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Updated mobile money phone number in E.164 format. Must match the provider specified in `provider`.
+</ParamField>
+
+<ParamField body="provider" type="string">
+  Updated provider code. Must correspond to the phone number on the record.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Updated email address.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Updated metadata object. The new object replaces the existing one entirely.
+</ParamField>
 
 ### Request example
 

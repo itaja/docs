@@ -1,5 +1,5 @@
 ---
-title: "Mobile Money Integration Overview"
+title: "Mobile Money Providers, Currencies, and Phone Formats"
 sidebarTitle: "Mobile Money"
 description: "Learn how Itaja connects to mobile money providers across Africa, how payment authorization works, and which provider codes to use in your API requests."
 ---
@@ -49,14 +49,14 @@ When making API requests that specify a payment provider, use the `provider` fie
 | Flooz | Togo | `flooz_tg` |
 
 <Tip>
-You can also retrieve the full list of active providers programmatically at any time by calling `GET /v1/providers`. The response includes each provider's code, supported currencies, and current operational status.
+You can also retrieve the full list of active providers programmatically at any time by calling `GET https://api.getitaja.com/v1/providers`. The response includes each provider's code, supported currencies, and current operational status.
 </Tip>
 
 ## Phone Number Format
 
 All phone numbers you pass to Itaja must be in **E.164 format**: a leading `+`, followed by the country code, followed by the subscriber number, with no spaces, dashes, or parentheses.
 
-```
+```text
 +[country code][subscriber number]
 ```
 

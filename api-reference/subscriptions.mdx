@@ -1,5 +1,5 @@
 ---
-title: "Subscriptions API — Manage Recurring Billing"
+title: "Subscriptions API — Manage Recurring Billing Cycles"
 sidebarTitle: "Subscriptions"
 description: "REST API reference for Itaja subscriptions. Create, pause, cancel, and retrieve subscriptions that link customers to billing plans."
 ---
@@ -171,6 +171,12 @@ Updates the state of a subscription. Use this endpoint to **pause** an active su
 <Note>
   Pausing a subscription suspends billing for the current and all future periods until you resume it. Itaja does not attempt any charges while a subscription is in `paused` status.
 </Note>
+
+### Body parameters
+
+<ParamField body="status" type="string" required>
+  The target state for the subscription. Pass `"paused"` to suspend billing or `"active"` to resume a paused subscription.
+</ParamField>
 
 ### Pause a subscription
 
