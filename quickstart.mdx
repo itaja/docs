@@ -1,47 +1,64 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Itaja in Minutes"
+sidebarTitle: "Quickstart"
+description: "Learn how to create your first subscription plan, add a customer, and collect your first mobile money payment with Itaja in under 10 minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+This guide walks you through everything you need to go from a blank account to a live, recurring mobile money subscription. By the end, you will have a billing plan configured, a customer enrolled, and an active subscription that Itaja will charge automatically on your chosen schedule.
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
-
-    ```bash
-    npm install your-package
-    ```
+  <Step title="Create Your Account">
+    Go to [getitaja.com](https://getitaja.com) and click **Sign Up**. Enter your business email address and choose a strong password. Itaja sends you a verification email — open it and click **Verify Email** to activate your account. Once verified, log in to access your Itaja dashboard. You start in test mode by default, which means you can explore every feature without processing real payments.
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
-    ```
+  <Step title="Get Your API Key">
+    In the dashboard, navigate to **Settings → API Keys**. You will see two sets of keys: a test key prefixed with `itaja_test_` and a live key prefixed with `itaja_live_`. Click **Generate Key** under the test section to create a new test API key, then click the copy icon to copy it to your clipboard. Use this key for all requests in the following steps. Keep your live key private and never expose it in client-side code.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+
+  <Step title="Create a Plan">
+    A plan defines the billing terms for your subscription — the name, amount, currency, and how often Itaja charges the customer. Create your first plan using the dashboard under **Plans → New Plan**, or send a request directly to the API:
 
     ```bash
-    your-cli start
+    curl -X POST https://api.getitaja.com/v1/plans \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "Basic Plan", "amount": 5000, "currency": "XOF", "interval": "monthly"}'
     ```
+
+    Itaja returns a plan object containing a `plan_id` (for example, `plan_xyz456`). Save this ID — you will reference it when creating a subscription. Supported currencies include XOF (FCFA), NGN, KES, GHS, and more depending on your target market.
+  </Step>
+
+  <Step title="Add a Customer">
+    A customer record stores the subscriber's name and their mobile money phone number. Itaja uses the `provider` field to route the payment charge to the correct mobile money network. Create your first customer:
+
+    ```bash
+    curl -X POST https://api.getitaja.com/v1/customers \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "Amara Diallo", "phone": "+221700000000", "provider": "orange_sn"}'
+    ```
+
+    The response includes a `customer_id` (for example, `cust_abc123`). Itaja supports provider identifiers for all major networks across its 19+ supported countries, such as `mtn_gh`, `mpesa_ke`, `airtel_ug`, and `wave_sn`, among others.
+  </Step>
+
+  <Step title="Create a Subscription">
+    With a plan and a customer in place, link them together to create a subscription. Itaja will automatically charge the customer's mobile money account on each billing date, handle retries if a payment fails, and track the subscription status in your dashboard.
+
+    ```bash
+    curl -X POST https://api.getitaja.com/v1/subscriptions \
+      -H "Authorization: Bearer YOUR_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"customer_id": "cust_abc123", "plan_id": "plan_xyz456", "start_date": "2024-01-01"}'
+    ```
+
+    Once the subscription is created, its status moves to `active`. Itaja schedules the first charge for the `start_date` you provide and queues all subsequent billing cycles automatically.
+  </Step>
+
+  <Step title="Monitor Payments">
+    Open your Itaja dashboard and navigate to **Payments** to see the status of every transaction in real time. The overview shows each payment attempt, its outcome (successful, pending, or failed), and the associated subscriber. Use the **Analytics** tab to track your overall payment success rate, monthly revenue, and subscriber growth over time. For failed payments, Itaja automatically retries according to your configured retry schedule and notifies the customer via SMS reminder.
   </Step>
 </Steps>
 
 <Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
-
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+  Set up webhooks to receive real-time notifications whenever a payment succeeds, fails, or a subscription status changes. This lets your application react instantly — for example, granting or revoking service access based on payment outcomes. See the [Webhooks reference](/api-reference/webhooks) to get started.
 </Tip>

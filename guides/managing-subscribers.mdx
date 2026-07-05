@@ -1,0 +1,111 @@
+---
+title: "Manage Subscribers and Subscriptions"
+sidebarTitle: "Subscribers"
+description: "Add customers, create subscriptions, update billing details, pause or cancel subscriptions, and track subscriber status in the Itaja dashboard."
+---
+
+Every paying user in Itaja moves through a subscriber lifecycle: they start as a customer record, get linked to a plan through a subscription, and then progress through states such as trialing, active, paused, and eventually cancelled. Understanding how to manage each stage gives you full control over your recurring revenue — from onboarding a new customer to gracefully offboarding one who wants to leave.
+
+## Adding a Customer
+
+Before you can create a subscription, you need a customer record that stores the subscriber's details, including the mobile money number Itaja will charge.
+
+```bash
+curl -X POST https://api.getitaja.com/v1/customers \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Kofi Mensah",
+    "email": "kofi@example.com",
+    "phone": "+233540000000",
+    "provider": "mtn_gh",
+    "metadata": {"user_id": "usr_789"}
+  }'
+```
+
+The `phone` field must be in E.164 format. The `provider` field identifies which mobile money network Itaja should use when charging this customer — for example, `mtn_gh` for MTN Ghana. Itaja returns a `customer_id` in the response; save it so you can reference this customer when creating subscriptions.
+
+## Creating a Subscription
+
+Link a customer to a plan by creating a subscription. Itaja will schedule and collect payments automatically from the start date you provide.
+
+```bash
+curl -X POST https://api.getitaja.com/v1/subscriptions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": "cust_abc123",
+    "plan_id": "plan_xyz456",
+    "start_date": "2024-02-01"
+  }'
+```
+
+If the plan includes a trial period, Itaja will not attempt to charge the customer until the trial ends. The subscription status will be `trialing` during that window and transition to `active` automatically when the first payment is collected.
+
+## Viewing Subscription Status
+
+**From the dashboard:** Click **Subscriptions** in the left sidebar. Use the search bar or filters to find a specific subscriber, then click their row to see full details including billing history, next billing date, and current status.
+
+**Via the API:** Fetch a subscription by its ID to see its current state:
+
+```bash
+curl https://api.getitaja.com/v1/subscriptions/sub_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+The response includes a `status` field that reflects the subscription's current state: `trialing`, `active`, `paused`, `past_due`, or `cancelled`.
+
+## Pausing a Subscription
+
+Pausing a subscription suspends billing without cancelling the customer's account. Itaja will not attempt any charges while a subscription is in the `paused` state.
+
+Send a `PATCH` request to update the status:
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/subscriptions/sub_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "paused"}'
+```
+
+To resume billing, send another `PATCH` request and set `status` back to `active`. Itaja will resume the billing cycle from the next scheduled date.
+
+## Cancelling a Subscription
+
+To cancel a subscription immediately, send a `DELETE` request:
+
+```bash
+curl -X DELETE https://api.getitaja.com/v1/subscriptions/sub_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+To cancel gracefully at the end of the current billing period — so the customer retains access through the period they have already paid for — include `cancel_at_period_end: true` in a `PATCH` request instead:
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/subscriptions/sub_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"cancel_at_period_end": true}'
+```
+
+The subscription status will remain `active` until the period ends, then transition to `cancelled` automatically.
+
+## Updating Payment Details
+
+If a customer switches their mobile money number or moves to a different provider, update their record by sending a `PATCH` request to `/v1/customers/:id` from your application:
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/customers/cust_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone": "+233550000001",
+    "provider": "vodafone_gh"
+  }'
+```
+
+Itaja will use the updated phone number and provider for all future billing attempts on subscriptions linked to this customer.
+
+<Tip>
+  Use the `metadata` field on both customer and subscription objects to store your own internal IDs — such as a `user_id` from your database or a `plan_tier` identifier. This makes it straightforward to cross-reference Itaja records with your own system without maintaining a separate mapping table.
+</Tip>

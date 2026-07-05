@@ -1,0 +1,62 @@
+---
+title: "Integrate Itaja with Your Platform"
+sidebarTitle: "Overview"
+description: "Connect Itaja to your existing business tools and workflows using REST APIs, webhooks, and native SDKs for popular languages and frameworks."
+---
+
+Itaja is built to fit into your existing stack with minimal friction. Whether you're embedding subscription billing into a web app, triggering automated workflows from payment events, or querying subscription data from your backend, Itaja gives you multiple integration paths — a REST API, real-time webhooks, and official SDKs for the most popular server-side languages. You can go live with a few lines of code and scale from there.
+
+## Integration Methods
+
+<CardGroup cols={2}>
+  <Card title="REST API" icon="code" href="/api-reference/introduction">
+    Programmatically manage plans, customers, and payments from your backend using Itaja's full-featured REST API.
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/api-reference/webhooks">
+    Subscribe to real-time payment and subscription events so your system reacts instantly to every status change.
+  </Card>
+  <Card title="Mobile Money Providers" icon="mobile" href="/integrations/supported-providers">
+    Browse the full list of supported providers, their API codes, and the countries and currencies they cover.
+  </Card>
+  <Card title="Supported Countries" icon="globe" href="/integrations/supported-countries">
+    See every country where Itaja is live, which providers are available, and what currency settlements look like.
+  </Card>
+</CardGroup>
+
+## REST API
+
+Itaja's REST API lets you programmatically create plans, manage customers, and monitor payments from your backend. Every resource — subscriptions, customers, invoices, and payment attempts — is accessible via predictable, resource-oriented endpoints that return standard JSON responses. You authenticate using a secret API key passed in the `Authorization` header, and the same key works across all 19+ supported countries with no per-country configuration needed.
+
+## Webhooks
+
+Subscribe to real-time events so your system reacts immediately to payment successes, failures, and subscription changes. When a payment is collected or a retry fails, Itaja sends an HTTP `POST` request to your configured endpoint with a signed JSON payload describing what happened. This lets you trigger downstream actions — updating a database, sending a notification, provisioning access — without polling the API. See the [Webhooks reference](/api-reference/webhooks) for the full list of event types and payload schemas.
+
+## SDK Support
+
+Official SDKs are available for Node.js, Python, and PHP. Each SDK wraps the REST API with typed methods, automatic retry handling, and idiomatic error objects so you spend less time reading documentation and more time shipping.
+
+<CodeGroup>
+  ```bash npm
+  npm install @itaja/sdk
+  ```
+
+  ```bash pip
+  pip install itaja
+  ```
+
+  ```bash composer
+  composer require itaja/sdk
+  ```
+</CodeGroup>
+
+All three SDKs support both sandbox and production environments. Switch between them by setting the `ITAJA_ENV` environment variable or passing an `environment` option when initialising the client.
+
+## Embedding the Payment Flow
+
+For the fastest path to production, Itaja provides a hosted payment confirmation page that handles provider selection, USSD push prompts, and success or failure messaging out of the box. You redirect your customer to the hosted page, and Itaja takes care of the rest — no front-end work required on your side.
+
+If you need a fully branded or embedded experience, you can drive the entire payment flow through the API instead. Create a payment intent, prompt the customer on your own UI, and listen for the outcome via webhook. This approach gives you complete control over the user experience while Itaja manages the provider-specific communication in the background.
+
+<Note>
+  For the complete list of API endpoints, request parameters, and response schemas, visit the [API Reference](/api-reference/introduction).
+</Note>

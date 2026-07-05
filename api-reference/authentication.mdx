@@ -1,0 +1,75 @@
+---
+title: "Authenticate API Requests to Itaja"
+sidebarTitle: "Authentication"
+description: "Generate API keys from the Itaja dashboard and pass them as Bearer tokens to authenticate every API request."
+---
+
+Itaja uses API key authentication. Every request you make to the API must include your API key as a Bearer token in the `Authorization` header. There are no session tokens or OAuth flows to manage — generate a key from your dashboard, store it securely, and attach it to every request.
+
+## Getting Your API Key
+
+To generate an API key, follow these steps:
+
+1. Log in to the [Itaja dashboard](https://app.getitaja.com).
+2. Navigate to **Settings → API Keys**.
+3. Click **Generate New Key**.
+4. Copy the key immediately — it is only shown once and cannot be retrieved again.
+
+<Warning>
+  If you navigate away from the page without copying your key, you will need to generate a new one. Itaja cannot display a key after it has been created.
+</Warning>
+
+## Using Your API Key
+
+Pass your API key in the `Authorization` header of every request as a Bearer token:
+
+```bash
+curl https://api.getitaja.com/v1/plans \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Any request missing a valid `Authorization` header receives a `401 Unauthorized` response. See [Errors](/api-reference/errors) for a full breakdown of authentication-related error codes.
+
+## Test vs Live Keys
+
+Itaja issues two types of API keys. Both are used against the same API endpoint — the key prefix determines whether real payments are processed.
+
+| Key Type | Prefix | Use Case |
+|---|---|---|
+| Test | `test_` | Sandbox, development, CI/CD pipelines |
+| Live | `live_` | Production payments with real mobile money accounts |
+
+Your test key is available immediately after you create an account. To obtain a live key, your business must complete the verification process in the dashboard.
+
+## Keeping Keys Secure
+
+Treat your API key like a password. Follow these best practices to protect it:
+
+- **Use environment variables** — never hard-code keys in your source code.
+- **Never commit keys to source control** — add your `.env` file to `.gitignore`.
+- **Restrict key access** — only the systems and team members that need API access should have the key.
+- **Rotate keys regularly** — especially after team member offboarding.
+
+Store your key in an environment variable and read it at runtime:
+
+<CodeGroup>
+
+```bash Shell
+export ITAJA_API_KEY=live_your_key_here
+```
+
+```js JavaScript
+const client = new Itaja(process.env.ITAJA_API_KEY);
+```
+
+</CodeGroup>
+
+## Rotating Keys
+
+If you need to issue a new key — whether as a routine security practice or in response to a suspected exposure — navigate to **Settings → API Keys → Regenerate** in the dashboard.
+
+<Warning>
+  If you suspect your API key has been compromised, rotate it immediately from the dashboard.
+</Warning>
+
+Regenerating a key **immediately invalidates** the old key. Any in-flight requests using the old key will fail with a `401` response. Make sure you update your environment variables and redeploy all services that use the key before or immediately after regenerating it to minimize downtime.

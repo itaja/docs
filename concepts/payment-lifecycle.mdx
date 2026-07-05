@@ -1,0 +1,91 @@
+---
+title: "Payment Lifecycle and Retry Logic"
+sidebarTitle: "Payment Lifecycle"
+description: "Trace a payment from creation to settlement in Itaja, including failure states, automatic retry schedules, and how webhooks keep your system in sync."
+---
+
+Every payment Itaja processes moves through a defined sequence of states, from the moment it is initiated to final settlement or failure. Understanding this lifecycle is essential for building reliable integrations — it lets you know exactly what to expect at each stage, how to handle failures gracefully, and how to keep your own system's data consistent with Itaja's. Whether you're reconciling revenue, updating a customer's access rights, or debugging a failed charge, the payment lifecycle is your reference point.
+
+## Payment States
+
+Payments transition through the following states in sequence. Not every payment passes through every state — a failed payment, for example, never reaches `succeeded`.
+
+<AccordionGroup>
+  <Accordion title="pending" icon="clock">
+    Itaja has initiated the payment and sent a prompt to the customer's phone. The payment is waiting for the customer to approve or reject it through their mobile money app or USSD menu. No funds have moved yet. Payments remain in `pending` state until the customer acts or the request times out.
+  </Accordion>
+
+  <Accordion title="processing" icon="rotate">
+    The customer has confirmed the payment on their device. Itaja has received the authorization and is waiting for the mobile money provider to complete the fund transfer and return a settlement confirmation. This state is typically brief — most providers settle within seconds — but can take a few minutes depending on network conditions.
+  </Accordion>
+
+  <Accordion title="succeeded" icon="circle-check">
+    The provider has confirmed that funds were successfully debited from the customer's wallet and transferred. The payment is complete. Itaja fires a `payment.succeeded` webhook event and, for subscription payments, schedules the next billing date.
+  </Accordion>
+
+  <Accordion title="failed" icon="circle-xmark">
+    The payment was declined, timed out, or could not be completed. Common reasons include insufficient funds in the customer's wallet, the customer rejecting the prompt, or a provider-side error. When a subscription payment fails, Itaja automatically begins the retry schedule (see below).
+  </Accordion>
+
+  <Accordion title="refunded" icon="rotate-left">
+    A previously `succeeded` payment has been reversed. Itaja initiates the refund back to the customer's mobile money wallet. Refunds can be triggered manually from the dashboard or via the API. Note that refund availability and timing depend on the provider and may not be instantaneous.
+  </Accordion>
+</AccordionGroup>
+
+## Automatic Retries
+
+When a subscription payment fails, Itaja does not immediately cancel the subscription. Instead, it automatically retries the charge on a fixed schedule to give the customer time to top up their wallet or resolve the issue.
+
+| Attempt | Timing |
+|---|---|
+| **Retry 1** | 1 day after the initial failure |
+| **Retry 2** | 3 days after the initial failure |
+| **Retry 3** | 7 days after the initial failure |
+
+While retries are in progress, the subscription moves to `past_due` status. If any retry succeeds, the subscription immediately returns to `active` and the billing cycle resumes from the successful payment date.
+
+If all three retries fail, Itaja marks the subscription as `cancelled` and fires a `subscription.cancelled` webhook event. At that point, no further charges are attempted automatically. You can choose to reach out to the customer and create a new subscription once they're ready to resubscribe.
+
+<Warning>
+Once a subscription is cancelled due to retry exhaustion, it cannot be reactivated. You must create a new subscription for the customer. Consider building a re-engagement flow triggered by the `subscription.cancelled` webhook to prompt customers to update their payment method or resubscribe.
+</Warning>
+
+## Smart Reminders
+
+To reduce the number of failed payments caused by insufficient funds, Itaja sends your customers an automatic reminder before each scheduled billing date. The reminder prompts them to ensure their mobile money wallet has enough balance for the upcoming charge.
+
+You can configure the reminder timing from **Settings → Billing → Reminder Schedule** in the dashboard:
+
+- Send reminders **1 day** before the billing date
+- Send reminders **2 days** before the billing date
+- Send reminders **3 days** before the billing date
+- Send reminders on **multiple days** (e.g., both 3 days and 1 day before)
+
+Reminders are delivered via **SMS** and, where supported by the provider, via **push notification** to the customer's mobile money app. You can customize the reminder message in the dashboard to include your business name and any relevant instructions.
+
+<Tip>
+Enabling reminders 2–3 days before billing consistently reduces first-attempt failure rates. We recommend starting with a 2-day reminder and adjusting based on the failure patterns you observe in your analytics dashboard.
+</Tip>
+
+## Webhooks
+
+Every time a payment or subscription changes state, Itaja fires a webhook event to your configured endpoint. Webhooks are the most reliable way to keep your system in sync with Itaja — do not rely solely on polling the API to detect state changes.
+
+The most important events to subscribe to are:
+
+| Event | When it fires |
+|---|---|
+| `payment.succeeded` | A payment completes successfully |
+| `payment.failed` | A payment attempt fails |
+| `payment.refunded` | A payment is refunded |
+| `subscription.activated` | A subscription becomes active (e.g., after trial ends) |
+| `subscription.past_due` | A subscription enters the retry window after a failed payment |
+| `subscription.cancelled` | A subscription is cancelled (manually or after retry exhaustion) |
+
+Each webhook payload includes the full payment or subscription object, the event type, and a timestamp, so you have all the context you need to update your database or trigger downstream workflows.
+
+To configure your webhook endpoint and view delivery logs, go to **Settings → Webhooks** in the dashboard, or see the [Webhooks API reference](/api-reference/webhooks).
+
+<Tip>
+Use the `idempotency_key` field when creating payments via the API to safely retry requests without double-charging. If Itaja receives two requests with the same `idempotency_key`, it returns the result of the first request rather than initiating a second payment.
+</Tip>

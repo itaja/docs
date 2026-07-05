@@ -1,0 +1,96 @@
+---
+title: "API Error Codes and Responses"
+sidebarTitle: "Errors"
+description: "Reference for all Itaja API error codes, HTTP status codes, and how to handle errors programmatically in your integration."
+---
+
+When a request cannot be completed, the Itaja API returns a structured JSON error response instead of a `data` payload. Every error response includes a machine-readable `error` code and a human-readable `message` so your integration can branch on specific failure types and surface meaningful feedback to your users.
+
+## Error Response Structure
+
+All error responses share the following shape:
+
+```json
+{
+  "error": "validation_error",
+  "message": "Human-readable description of the error",
+  "errors": [
+    { "field": "phone", "message": "Must be in E.164 format" }
+  ]
+}
+```
+
+<ResponseField name="error" type="string" required>
+  A machine-readable error code identifying the category of failure. Use this field to branch your error-handling logic.
+</ResponseField>
+
+<ResponseField name="message" type="string" required>
+  A human-readable sentence describing what went wrong. Suitable for logging, but not guaranteed to be stable across API versions — use `error` for programmatic checks.
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  Present only on `validation_error` responses. Each element identifies a specific request field that failed validation, along with a message describing the requirement.
+</ResponseField>
+
+<Note>
+  The `errors` array is only included in the response body when the `error` code is `validation_error`. For all other error types, only `error` and `message` are returned.
+</Note>
+
+## HTTP Status Codes
+
+The API uses standard HTTP status codes to communicate the outcome of every request at the transport level.
+
+| Status | Meaning |
+|---|---|
+| `200` | Request succeeded |
+| `201` | Resource created successfully |
+| `204` | Resource deleted — no response body is returned |
+| `400` | Bad request — the request body contains malformed JSON |
+| `401` | Unauthorized — the API key is missing or invalid |
+| `403` | Forbidden — the API key does not have permission for this action |
+| `404` | Not found — the requested resource does not exist |
+| `409` | Conflict — duplicate resource or incompatible state transition |
+| `422` | Unprocessable — request was well-formed but failed validation |
+| `429` | Rate limited — you have exceeded 100 requests per minute |
+| `500` | Internal server error — an unexpected error occurred on Itaja's side |
+
+## Error Codes
+
+Use the `error` field in the response body to identify the specific failure type and respond appropriately.
+
+| Code | Status | Description |
+|---|---|---|
+| `unauthorized` | 401 | API key is missing or invalid |
+| `forbidden` | 403 | API key lacks permission for this action |
+| `not_found` | 404 | The requested resource does not exist |
+| `conflict` | 409 | Duplicate idempotency key or incompatible state conflict |
+| `validation_error` | 422 | One or more request fields are invalid; check the `errors` array |
+| `rate_limited` | 429 | Too many requests; check the `Retry-After` header |
+| `payment_failed` | 422 | Payment was declined by the mobile money provider |
+| `provider_unavailable` | 503 | The mobile money provider is temporarily unreachable |
+| `server_error` | 500 | Unexpected server error; retry with exponential backoff |
+
+## Handling Errors in Code
+
+Check the `error` code on every failed request and handle each category explicitly. The example below shows a typical pattern using the Itaja JavaScript SDK:
+
+```js
+try {
+  const subscription = await itaja.subscriptions.create({
+    customer_id: 'cust_abc',
+    plan_id: 'plan_xyz'
+  });
+} catch (err) {
+  if (err.code === 'validation_error') {
+    console.error('Validation errors:', err.errors);
+  } else if (err.code === 'payment_failed') {
+    // Handle declined payment — notify the customer to check their mobile money balance
+  } else {
+    throw err; // Re-throw unexpected errors
+  }
+}
+```
+
+<Tip>
+  Implement exponential backoff for `500` and `503` errors. For `429` errors, wait exactly the number of seconds specified in the `Retry-After` response header.
+</Tip>

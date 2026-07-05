@@ -1,0 +1,128 @@
+---
+title: "How Subscriptions Work in Itaja"
+sidebarTitle: "Subscriptions"
+description: "Understand the Itaja subscription model: plans, billing cycles, trial periods, pause and cancel workflows, and how recurring charges are triggered."
+---
+
+A subscription in Itaja represents an ongoing billing relationship between your business and a customer. When you create a subscription, Itaja automatically charges the customer's mobile money account on a recurring schedule — handling payment prompts, retries, and status tracking on your behalf. You focus on your product; Itaja handles the billing machinery.
+
+## Plans vs Subscriptions
+
+Before you can subscribe a customer, you need a **Plan**. Think of a Plan as a reusable billing template that defines the commercial terms:
+
+- **Amount** — how much to charge each billing cycle
+- **Currency** — the currency of the charge (e.g., `XOF`, `KES`, `NGN`)
+- **Interval** — how often to charge (`weekly`, `monthly`, or `annual`)
+
+A **Subscription** is an instance of a Plan applied to a specific customer. When you create a subscription, you link a Customer record to a Plan. One Plan can power thousands of subscriptions; each subscription is independently tracked with its own state, billing date, and payment history.
+
+| Concept | What it defines | Created once? |
+|---|---|---|
+| Plan | Amount, currency, billing interval | Yes — reuse across many customers |
+| Subscription | Links a customer to a plan, tracks billing state | No — one per customer per plan |
+
+## Billing Intervals
+
+Itaja supports three billing intervals:
+
+- **Weekly** — the customer is charged every 7 days from their subscription start date.
+- **Monthly** — the customer is charged on the same calendar day each month. For example, a subscription started on the 15th bills on the 15th of every subsequent month.
+- **Annual** — the customer is charged once per year on the anniversary of their subscription start date.
+
+**Billing date edge cases:** If a subscription starts on the 29th, 30th, or 31st of a month and the next billing month has fewer days, Itaja bills on the last day of that month instead. For example, a subscription started on January 31st bills on February 28th (or 29th in a leap year).
+
+<Note>
+Itaja does not skip charges on weekends or public holidays. If a billing date falls on a Saturday, Sunday, or local holiday, the charge is still attempted on that day. Design your customer communications accordingly.
+</Note>
+
+## Subscription States
+
+Every subscription in Itaja carries a `status` field that reflects its current billing health. The status changes automatically as payments succeed or fail, and you can also trigger certain transitions manually.
+
+<AccordionGroup>
+  <Accordion title="active" icon="circle-check">
+    The subscription is in good standing and billing normally. Itaja will charge the customer on each upcoming billing date according to the plan interval. This is the default state after a successful first payment (or immediately after trial if no trial was set).
+  </Accordion>
+
+  <Accordion title="trialing" icon="hourglass-half">
+    The subscription is within its trial period. No charges are made while a subscription is in this state. Once the trial ends, Itaja transitions the subscription to `active` and initiates the first real charge on the trial end date.
+  </Accordion>
+
+  <Accordion title="past_due" icon="triangle-exclamation">
+    The most recent payment failed and Itaja is actively retrying. The subscription remains `past_due` throughout the retry window. If all retry attempts succeed, the subscription returns to `active`. If all retries are exhausted without a successful payment, the subscription moves to `cancelled`.
+  </Accordion>
+
+  <Accordion title="paused" icon="circle-pause">
+    You (or the customer, if you allow it) manually paused the subscription. No charges are attempted while a subscription is paused. The billing cycle timer also stops — when you resume, the next billing date is recalculated from the resume date. Pausing is reversible.
+  </Accordion>
+
+  <Accordion title="cancelled" icon="circle-xmark">
+    The subscription has been permanently terminated. No further charges are made and the subscription cannot be reactivated. To resume billing for the same customer, you create a new subscription. Cancellation can be triggered manually or automatically after retry exhaustion.
+  </Accordion>
+</AccordionGroup>
+
+## Trial Periods
+
+You can attach a trial period to any subscription at creation time by specifying a `trial_period_days` value. Itaja delays the first charge by that many days, placing the subscription in `trialing` state for the duration.
+
+```json
+{
+  "customer_id": "cus_01HX...",
+  "plan_id": "plan_01HX...",
+  "trial_period_days": 14
+}
+```
+
+During the trial, Itaja still validates the customer's mobile money account to confirm reachability, but does not debit any funds. When the trial expires, the subscription automatically transitions to `active` and the first charge is triggered.
+
+<Tip>
+Use trial periods to reduce churn at the top of your funnel. A 7- or 14-day trial gives customers time to experience your product before the first charge, which typically improves long-term retention.
+</Tip>
+
+## Pausing & Cancelling
+
+Pausing and cancelling are distinct actions with different consequences:
+
+| Action | Effect | Reversible? |
+|---|---|---|
+| **Pause** | Suspends billing temporarily; no charges during the pause window | Yes — resume at any time |
+| **Cancel** | Terminates the subscription permanently; no further charges | No — requires a new subscription |
+
+### Via the Dashboard
+
+1. Navigate to **Subscribers → [Customer name] → Subscriptions**.
+2. Select the subscription you want to modify.
+3. Click **Pause** to suspend billing, or **Cancel** to terminate it permanently.
+4. For pause, you can optionally set a scheduled resume date.
+
+### Via the API
+
+**Pause a subscription:**
+
+```bash
+POST /v1/subscriptions/{subscription_id}/pause
+```
+
+**Resume a paused subscription:**
+
+```bash
+POST /v1/subscriptions/{subscription_id}/resume
+```
+
+**Cancel a subscription:**
+
+```bash
+POST /v1/subscriptions/{subscription_id}/cancel
+```
+
+<Warning>
+Cancellation is irreversible. Always confirm with your customer before cancelling. If you want to give a customer a break without losing their subscription history, use **pause** instead.
+</Warning>
+
+## Proration
+
+When you upgrade or downgrade a customer's plan mid-billing cycle, Itaja calculates a prorated charge or credit for the remaining days in the current cycle. For example, if a customer switches from a 5,000 XOF/month plan to a 10,000 XOF/month plan halfway through the month, Itaja immediately charges roughly 2,500 XOF to cover the cost difference for the remaining half-month. The next billing date then reflects the full new plan amount.
+
+<Info>
+Prorated amounts appear as separate line items in the customer's payment history and in your analytics dashboard, so you can always audit the exact calculation.
+</Info>

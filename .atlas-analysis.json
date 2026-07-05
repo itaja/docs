@@ -1,13 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "projectType": "saas",
+  "projectName": "Itaja",
+  "projectDescription": "Itaja is a mobile money subscription management platform that automates recurring payments for African businesses across 19+ countries.",
   "theme": "almond",
-  "name": "Itaja",
-  "colors": {
-    "primary": "#7c7c7c",
-    "light": "#0c0c0c",
-    "dark": "#c6c6c6"
-  },
-  "favicon": "https://media.brand.dev/f3c83e87-dc80-41e2-a3f2-3cfa35be668a.png",
+  "primaryColor": "#7c7c7c",
+  "lightColor": "#0c0c0c",
+  "darkColor": "#c6c6c6",
   "navigation": {
     "tabs": [
       {
@@ -80,20 +78,27 @@
       }
     ]
   },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:elikem@getitaja.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Book a Demo",
-      "href": "https://getitaja.com/book-demo"
-    }
-  },
-  "footer": {
-    "socials": {}
-  }
+  "keyFeatures": [
+    "Recurring mobile money subscription billing",
+    "Pan-African coverage across 19+ countries",
+    "Multi-provider mobile money integration (MTN, Orange, Airtel, M-Pesa, etc.)",
+    "Automatic payment retries on failure",
+    "Smart payment reminders to reduce churn",
+    "Real-time dashboard with revenue analytics",
+    "Subscriber management and lifecycle tracking",
+    "Enterprise-grade transaction security"
+  ],
+  "publicApiSurface": [
+    "POST /subscriptions — create a new subscription",
+    "GET /subscriptions/:id — retrieve subscription details",
+    "PATCH /subscriptions/:id — update subscription",
+    "DELETE /subscriptions/:id — cancel subscription",
+    "POST /customers — create a customer",
+    "GET /customers/:id — retrieve customer",
+    "POST /plans — create a billing plan",
+    "GET /plans — list all plans",
+    "GET /payments — list payment transactions",
+    "POST /webhooks — register webhook endpoint",
+    "GET /webhooks — list webhooks"
+  ]
 }

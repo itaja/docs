@@ -1,0 +1,51 @@
+---
+title: "Supported Mobile Money Providers"
+sidebarTitle: "Providers"
+description: "Full list of mobile money providers supported by Itaja, with provider codes for API requests, supported countries, and currency details."
+---
+
+Itaja abstracts away the complexity of integrating with individual mobile money networks. Instead of building and maintaining separate integrations for MTN, Orange, M-Pesa, Wave, and others, you connect once to Itaja and reach customers across 19+ countries through a single, consistent API. Each provider is identified by a short code that you include in your API requests to tell Itaja which network to use for a given customer or subscription.
+
+## Using Provider Codes
+
+When you create a customer or subscription through the Itaja API, you pass a `provider` field in the request body. This code tells Itaja which mobile money network to use when initiating payment collection and sending reminders. Make sure the provider code you supply matches the network your customer actually uses — an incorrect code will result in a failed payment attempt.
+
+For example, to bill a customer in Senegal on Orange Money, you set `"provider": "orange_sn"` in your request. To bill a customer in Kenya on M-Pesa, you set `"provider": "mpesa_ke"`.
+
+## Provider Reference Table
+
+| Provider | Countries | Code | Currency |
+|---|---|---|---|
+| Orange Money | Senegal | `orange_sn` | XOF |
+| Orange Money | Ivory Coast | `orange_ci` | XOF |
+| Orange Money | Mali | `orange_ml` | XOF |
+| Orange Money | Cameroon | `orange_cm` | XAF |
+| Orange Money | Guinea | `orange_gn` | GNF |
+| MTN Mobile Money | Ghana | `mtn_gh` | GHS |
+| MTN Mobile Money | Uganda | `mtn_ug` | UGX |
+| MTN Mobile Money | Rwanda | `mtn_rw` | RWF |
+| MTN Mobile Money | Cameroon | `mtn_cm` | XAF |
+| MTN Mobile Money | Nigeria | `mtn_ng` | NGN |
+| Airtel Money | Kenya | `airtel_ke` | KES |
+| Airtel Money | Uganda | `airtel_ug` | UGX |
+| Airtel Money | Zambia | `airtel_zm` | ZMW |
+| Airtel Money | Malawi | `airtel_mw` | MWK |
+| Airtel Money | Niger | `airtel_ne` | XOF |
+| M-Pesa | Kenya | `mpesa_ke` | KES |
+| M-Pesa | Tanzania | `mpesa_tz` | TZS |
+| M-Pesa | DR Congo | `mpesa_cd` | CDF |
+| Wave | Senegal | `wave_sn` | XOF |
+| Wave | Ivory Coast | `wave_ci` | XOF |
+| Moov Money | Benin | `moov_bj` | XOF |
+| Moov Money | Togo | `moov_tg` | XOF |
+| Moov Money | Burkina Faso | `moov_bf` | XOF |
+| Moov Money | Gabon | `moov_ga` | XAF |
+| Flooz | Togo | `flooz_tg` | XOF |
+
+## Testing Providers
+
+In sandbox mode, all provider codes work with test phone numbers — you don't need a real mobile money account to simulate payment flows. Use any phone number in the format specified in the [API reference](/api-reference/introduction) to trigger success, failure, or pending states and verify that your integration handles each outcome correctly before going live.
+
+<Info>
+  Don't see your country or provider? Contact us at elikem@getitaja.com — we're expanding coverage regularly.
+</Info>

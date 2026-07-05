@@ -1,0 +1,228 @@
+---
+title: "Plans API — Create and Manage Billing Plans"
+sidebarTitle: "Plans"
+description: "REST API reference for Itaja billing plans. Create, retrieve, update, and archive subscription plans with amount, currency, and interval settings."
+---
+
+A **plan** defines the amount, currency, and billing cadence that Itaja uses when charging your customers. You create plans once and then attach any number of customers to them via subscriptions. Plans support weekly, monthly, and annual intervals and can optionally include a free trial period. Changes you make to a plan after it is live do not affect existing active subscriptions — only new subscriptions pick up the updated settings.
+
+---
+
+## Create a plan
+
+`POST /plans`
+
+Creates a new billing plan. The plan becomes immediately available for subscriptions once created.
+
+### Body parameters
+
+<ParamField body="name" type="string" required>
+  Display name for the plan. Shown on receipts and in the dashboard (e.g., `"Pro Plan"`).
+</ParamField>
+
+<ParamField body="amount" type="integer" required>
+  Billing amount expressed in the **smallest unit** of the specified currency (e.g., `5000` for 5,000 XOF or ₦5,000 NGN). Must be a positive integer.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  ISO 4217 currency code for the plan. Accepted values include `XOF`, `XAF`, `NGN`, `GHS`, `KES`, `UGX`, `RWF`, `ZMW`, `MWK`, and `TZS`.
+</ParamField>
+
+<ParamField body="interval" type="string" required>
+  How often Itaja bills subscribers on this plan. One of `weekly`, `monthly`, or `annual`.
+</ParamField>
+
+<ParamField body="description" type="string">
+  A human-readable description of the plan. Useful for displaying plan details in your application UI.
+</ParamField>
+
+<ParamField body="trial_days" type="integer">
+  Number of free trial days granted before the first charge. Defaults to `0` (no trial).
+</ParamField>
+
+### Request example
+
+```bash
+curl -X POST https://api.getitaja.com/v1/plans \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Pro Plan", "amount": 15000, "currency": "XOF", "interval": "monthly", "trial_days": 14}'
+```
+
+### Response `201 Created`
+
+```json
+{
+  "data": {
+    "id": "plan_abc123",
+    "name": "Pro Plan",
+    "amount": 15000,
+    "currency": "XOF",
+    "interval": "monthly",
+    "trial_days": 14,
+    "active": true,
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the plan. Use this ID when creating subscriptions.
+</ResponseField>
+
+<ResponseField name="data.active" type="boolean">
+  `true` while the plan is live and available for new subscriptions. Set to `false` when the plan is archived.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 timestamp of when the plan was created.
+</ResponseField>
+
+---
+
+## List all plans
+
+`GET /plans`
+
+Returns a paginated list of your billing plans. Use the `active` filter to narrow results to only live or only archived plans.
+
+### Query parameters
+
+<ParamField query="page" type="integer">
+  Page number to retrieve. Defaults to `1`.
+</ParamField>
+
+<ParamField query="per_page" type="integer">
+  Number of plans per page. Defaults to `20`. Maximum is `100`.
+</ParamField>
+
+<ParamField query="active" type="boolean">
+  Filter by plan status. Pass `true` to return only active plans or `false` to return archived plans. Omit to return all plans.
+</ParamField>
+
+### Request example
+
+```bash
+curl 'https://api.getitaja.com/v1/plans?active=true&page=1&per_page=20' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": "plan_abc123",
+      "name": "Pro Plan",
+      "amount": 15000,
+      "currency": "XOF",
+      "interval": "monthly",
+      "trial_days": 14,
+      "active": true,
+      "created_at": "2024-01-15T10:00:00Z"
+    }
+  ],
+  "meta": { "total": 1, "page": 1, "per_page": 20 }
+}
+```
+
+---
+
+## Retrieve a plan
+
+`GET /plans/:id`
+
+Fetches a single plan by its unique identifier.
+
+### Request example
+
+```bash
+curl https://api.getitaja.com/v1/plans/plan_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "plan_abc123",
+    "name": "Pro Plan",
+    "amount": 15000,
+    "currency": "XOF",
+    "interval": "monthly",
+    "trial_days": 14,
+    "active": true,
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Update a plan
+
+`PATCH /plans/:id`
+
+Updates one or more fields on an existing plan. You can change the `name`, `description`, `trial_days`, or `amount`.
+
+<Note>
+  Updating a plan's `amount` or `interval` does **not** affect any existing subscriptions. Only new subscriptions created after the update will use the new values.
+</Note>
+
+### Request example
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/plans/plan_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Pro Plan v2", "trial_days": 7}'
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "plan_abc123",
+    "name": "Pro Plan v2",
+    "amount": 15000,
+    "currency": "XOF",
+    "interval": "monthly",
+    "trial_days": 7,
+    "active": true,
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Archive a plan
+
+`DELETE /plans/:id`
+
+Archives (soft-deletes) a plan. Archived plans are no longer available for new subscriptions, but all **existing subscriptions on this plan continue to bill normally** until they are individually cancelled.
+
+<Tip>
+  If you want to retire a plan entirely, archive it first and then cancel any active subscriptions attached to it.
+</Tip>
+
+### Request example
+
+```bash
+curl -X DELETE https://api.getitaja.com/v1/plans/plan_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "plan_abc123",
+    "active": false
+  }
+}
+```

@@ -1,0 +1,121 @@
+---
+title: "Troubleshoot Common Itaja Issues"
+sidebarTitle: "Troubleshooting"
+description: "Diagnose and resolve common problems with Itaja payments, API authentication errors, webhook delivery failures, and subscription state issues."
+---
+
+Most integration and operational issues with Itaja have a clear, fixable cause. This page walks you through the most common problems — from payments failing to webhooks going silent — so you can diagnose and resolve them without waiting for support. Work through the relevant section below, and if you're still stuck, contact the team directly using the link at the bottom of this page.
+
+## Payment Issues
+
+<AccordionGroup>
+  <Accordion title="Payments keep failing for a subscriber">
+    Start by checking the following in order:
+
+    1. **Wallet balance** — The subscriber's mobile money wallet may not have sufficient funds. Itaja's smart reminders notify the subscriber automatically, but you may want to communicate with them directly through your app.
+    2. **Phone number format** — Confirm the subscriber's phone number is stored in **E.164 format** (e.g., `+2348012345678`). Numbers in local format (e.g., `08012345678`) will fail at the provider level.
+    3. **Provider code** — Make sure the `provider` value you passed when creating the subscription matches the subscriber's actual mobile network. Sending a payment request to MTN for a customer on Airtel will always fail.
+    4. **Test vs. live mode mismatch** — If your account is in sandbox mode but you're attempting to use live API keys (or vice versa), all payment requests will fail. Check **Settings → API Keys** to confirm you're using the right key for your current environment.
+
+    <Tip>
+      The subscription's payment history in your dashboard shows provider-level error codes for each failed attempt, which can pinpoint the exact failure reason quickly.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Payment is stuck in `pending` state">
+    A `pending` payment means Itaja has sent the payment request to the mobile money provider and is waiting for the subscriber to approve it on their phone. This is normal — the subscriber receives a USSD prompt or push notification to confirm the charge.
+
+    If the subscriber doesn't respond, the payment times out after **5 minutes** and moves to a `failed` state. You can then re-trigger the payment manually from the subscription detail page in your dashboard, or wait for Itaja's automatic retry schedule to kick in.
+
+    <Note>
+      Remind your subscribers to keep their phones accessible at billing time to avoid unnecessary failures from expired payment prompts.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Customers are being charged unexpectedly">
+    Unexpected charges are almost always caused by duplicate subscription creation — for example, your server creating the same subscription twice due to a network retry or a race condition.
+
+    To prevent this, include an `idempotency_key` on every subscription and payment creation request. Itaja uses this key to detect and deduplicate identical requests, so retrying a request with the same key is always safe.
+
+    Check your subscription list in the dashboard and look for duplicate entries for the same customer. If you find duplicates, cancel the unintended ones immediately to stop future billing.
+
+    <Warning>
+      Always use idempotency keys in production. A unique key per operation (e.g., a UUID generated before the API call) is sufficient.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## API Errors
+
+Use the table below to identify what an API error means and how to resolve it.
+
+| HTTP Status | Error Code | Meaning | Fix |
+|---|---|---|---|
+| 401 | `unauthorized` | Invalid or missing API key | Check that your `Authorization` header is formatted as `Bearer YOUR_KEY` and that the key is correct and active. |
+| 403 | `forbidden` | Live API key used against a sandbox endpoint, or vice versa | Use your **test key** for sandbox requests and your **live key** for production requests. |
+| 404 | `not_found` | The requested resource ID doesn't exist | Verify the ID is correct and that it belongs to your account. IDs from other accounts are not accessible. |
+| 409 | `conflict` | Duplicate request detected | Pass an `idempotency_key` on payment and subscription creation requests to safely retry without creating duplicates. |
+| 422 | `validation_error` | One or more request parameters are invalid | Inspect the `errors` array in the response body — it contains field-level details describing exactly what's wrong. |
+| 429 | `rate_limited` | You've exceeded the API rate limit | Back off and retry your request after the number of seconds indicated in the `Retry-After` response header. |
+| 500 | `server_error` | An unexpected error occurred on Itaja's servers | Retry your request using exponential backoff. If the issue persists, check [status.getitaja.com](https://status.getitaja.com) for active incidents. |
+
+## Webhook Issues
+
+<AccordionGroup>
+  <Accordion title="My endpoint is not receiving webhook events">
+    Work through this checklist:
+
+    1. **Public accessibility** — Your webhook endpoint URL must be reachable from the public internet. Local development URLs (e.g., `localhost`) won't work in production. Use a tunneling tool like ngrok during local testing.
+    2. **Webhook is active** — Go to **Settings → Webhooks** in your dashboard and confirm the webhook entry exists and is toggled on.
+    3. **HTTP 200 response** — Itaja considers a delivery successful only when your endpoint returns an HTTP `200` status code. If your server returns any other status (including redirects like `301` or `302`), Itaja will treat the delivery as failed and retry it.
+
+    <Tip>
+      Your dashboard's webhook log shows every delivery attempt and the response your server returned, making it easy to diagnose delivery failures without guessing.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="I'm receiving duplicate webhook events">
+    Itaja retries webhook delivery when your endpoint does not return HTTP `200`. If your server processes the event but returns a non-200 status — or times out — Itaja will attempt delivery again, which can result in your handler processing the same event more than once.
+
+    To handle this safely, use the event `id` field in the webhook payload to deduplicate on your end. Before processing any event, check whether you've already handled an event with that ID (for example, by storing processed IDs in your database). If you have, skip processing and still return `200` to acknowledge receipt.
+  </Accordion>
+
+  <Accordion title="Webhook signature verification is failing">
+    Signature verification fails most often because the request body has been parsed or transformed before the signature check runs. Itaja computes the signature against the **raw request body bytes** — not a re-serialized JSON object.
+
+    Make sure you're reading the raw body from the incoming HTTP request before passing it to the verification function. In most frameworks, this means reading the request as a buffer or raw string before any JSON parsing middleware runs.
+
+    <Warning>
+      If your web framework parses the body automatically (e.g., Express with `express.json()`), you need to register a raw body parser specifically for your webhook route before the JSON middleware processes it.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Subscription Issues
+
+<AccordionGroup>
+  <Accordion title="A subscription moved to `past_due` unexpectedly">
+    A subscription enters `past_due` state after **three consecutive payment failures**. To investigate:
+
+    1. Open the subscription in your dashboard and review its full payment history. The failure reason for each attempt is recorded there.
+    2. Common causes include the subscriber's phone number changing, a provider mismatch, or a consistently low wallet balance.
+    3. Update the subscriber's phone number or provider on the subscription record if needed.
+    4. Once you've corrected the underlying issue, manually trigger a new payment attempt from the dashboard to bring the subscription back to `active`.
+
+    <Note>
+      Itaja sends webhook events for each payment failure, so you can build automated flows in your app to prompt customers to update their details before the subscription hits `past_due`.
+    </Note>
+  </Accordion>
+
+  <Accordion title="I can't cancel a subscription">
+    You can only cancel a subscription that is currently in one of the following states: `active`, `past_due`, or `paused`. Subscriptions in `cancelled`, `expired`, or `incomplete` states are already terminal and cannot be cancelled again.
+
+    Before attempting a cancellation, fetch the subscription and check its `status` field. If the subscription is in a non-cancellable state, no further action is needed — it is already inactive and will not generate any future charges.
+  </Accordion>
+</AccordionGroup>
+
+## Contacting Support
+
+<Card title="Email Support" icon="envelope" href="mailto:elikem@getitaja.com">
+  For issues not covered here, reach out to the Itaja team directly. Include your account ID, the relevant subscription or payment ID, and a description of what you're seeing so the team can help you faster.
+</Card>

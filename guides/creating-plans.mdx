@@ -1,0 +1,98 @@
+---
+title: "Create and Manage Subscription Plans"
+sidebarTitle: "Billing Plans"
+description: "Set up subscription plans in Itaja that define billing amounts, currencies, intervals, and trial periods for your customers."
+---
+
+A plan is the billing template at the heart of every subscription you create. It defines what you charge, how often you charge it, and whether new subscribers get a free trial before their first payment. Every subscriber you onboard must be linked to a plan, so setting up your plans is the first step before you start collecting recurring payments.
+
+## Creating a Plan via Dashboard
+
+<Steps>
+  <Step title="Open the Plans section">
+    Log in to the [Itaja dashboard](https://app.getitaja.com) and click **Plans** in the left sidebar.
+  </Step>
+  <Step title="Start a new plan">
+    Click **Create Plan** in the top-right corner of the page.
+  </Step>
+  <Step title="Fill in the plan details">
+    Enter a **Plan Name** and an optional **Description**, then set the **Amount**, **Currency**, and **Billing Interval**. Itaja supports weekly, monthly, and annual billing intervals.
+  </Step>
+  <Step title="Set a trial period (optional)">
+    If you want new subscribers to enjoy a free trial before their first charge, enter the number of trial days in the **Trial Period** field. Leave it blank for no trial.
+  </Step>
+  <Step title="Save the plan">
+    Click **Save**. Your plan is now active and ready to accept new subscriptions.
+  </Step>
+</Steps>
+
+## Creating a Plan via API
+
+Send a `POST` request to `/v1/plans` with your plan details in the request body.
+
+```bash
+curl -X POST https://api.getitaja.com/v1/plans \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Pro Plan",
+    "description": "Full access to all features",
+    "amount": 15000,
+    "currency": "XOF",
+    "interval": "monthly",
+    "trial_days": 14
+  }'
+```
+
+A successful request returns the newly created plan object:
+
+```json
+{
+  "id": "plan_abc123",
+  "name": "Pro Plan",
+  "amount": 15000,
+  "currency": "XOF",
+  "interval": "monthly",
+  "trial_days": 14,
+  "active": true,
+  "created_at": "2024-01-15T10:00:00Z"
+}
+```
+
+Store the returned `id` — you'll reference it whenever you create a subscription for a customer.
+
+## Updating a Plan
+
+Use a `PATCH` request to update any field on an existing plan, such as the amount, name, or description.
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/plans/plan_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": 18000}'
+```
+
+<Note>
+  Updating a plan does **not** affect existing subscriptions. Subscribers who are already on the plan continue to be charged under the original terms. Only new subscribers created after the update will see the new amount and terms.
+</Note>
+
+## Archiving a Plan
+
+When you no longer want to offer a plan to new subscribers, archive it instead of deleting it. Archiving deactivates the plan so that no new subscriptions can be created on it, while every existing subscription tied to that plan continues billing without interruption.
+
+To archive a plan from the dashboard, open the plan's detail page, click the **More options** menu (⋯), and select **Archive Plan**. Confirm the action in the dialog that appears.
+
+To archive via the API, send a `PATCH` request and set `active` to `false`:
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/plans/plan_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"active": false}'
+```
+
+Archived plans remain visible in your dashboard under the **Archived** filter tab so you can review their historical performance at any time.
+
+<Note>
+  Itaja supports the following currencies: **XOF**, **XAF**, **NGN**, **GHS**, **KES**, **UGX**, **RWF**, **TZS**, and **ZMW**. Make sure the currency you set on a plan matches the mobile money provider and market you are billing in.
+</Note>

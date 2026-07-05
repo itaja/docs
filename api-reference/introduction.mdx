@@ -1,0 +1,124 @@
+---
+title: "Itaja REST API Reference"
+sidebarTitle: "Introduction"
+description: "Explore the Itaja REST API: base URLs, request format, pagination, rate limits, and versioning for managing subscriptions and payments."
+---
+
+The Itaja REST API gives you programmatic access to the full suite of subscription and payment management capabilities across 19+ African markets. You can create and manage plans, enroll customers, trigger recurring mobile money charges, and receive real-time status updates — all through a consistent, resource-oriented HTTP interface.
+
+## Base URL
+
+All API requests are made to the following base URL:
+
+```
+https://api.getitaja.com/v1
+```
+
+Every endpoint is versioned through the URL path. There is no need to set a version header.
+
+## Request Format
+
+Every request you send to the Itaja API must follow these conventions:
+
+- **Use HTTPS** — plain HTTP connections are rejected.
+- **Set `Content-Type: application/json`** on all `POST` and `PATCH` requests that include a body.
+- **Include an `Authorization` header** with your API key as a Bearer token on every request.
+
+```bash
+curl https://api.getitaja.com/v1/plans \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+## Response Format
+
+All responses — success or error — are returned as JSON.
+
+**Successful responses** always contain a top-level `data` field holding the requested resource or list of resources:
+
+```json
+{
+  "data": {
+    "id": "sub_abc123",
+    "status": "active"
+  }
+}
+```
+
+**Error responses** contain `error` and `message` fields. Validation errors additionally include an `errors` array that maps individual fields to their failure reasons:
+
+```json
+{
+  "error": "validation_error",
+  "message": "Phone number must be in E.164 format",
+  "errors": [
+    { "field": "phone", "message": "Must be in E.164 format, e.g. +221700000000" }
+  ]
+}
+```
+
+See [Errors](/api-reference/errors) for the full list of error codes and handling guidance.
+
+## Pagination
+
+All list endpoints support cursor-free, page-based pagination via the `page` and `per_page` query parameters. Responses include a `meta` object describing the current page state:
+
+```json
+{
+  "data": [...],
+  "meta": {
+    "total": 124,
+    "page": 1,
+    "per_page": 20
+  }
+}
+```
+
+<Note>
+  The default value of `per_page` is `20`. The maximum allowed value is `100`. If you omit `page`, the API returns the first page.
+</Note>
+
+## Rate Limits
+
+The API enforces a limit of **100 requests per minute per API key**. If you exceed this limit, the API returns an HTTP `429` response with a `Retry-After` header indicating how many seconds to wait before retrying.
+
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 12
+```
+
+<Tip>
+  For 429 responses, wait exactly the number of seconds specified in the `Retry-After` header rather than using a fixed delay. For 500 and 503 responses, implement exponential backoff with jitter.
+</Tip>
+
+## Versioning
+
+The current API version is **`v1`**, embedded directly in the base URL path. Itaja follows a compatibility-first policy — additive changes (new fields, new endpoints) may be made to `v1` at any time without advance notice. Breaking changes — such as removing fields or altering response shapes — will be introduced as a new version (e.g. `v2`) with advance notice and a deprecation window for `v1`.
+
+## Idempotency
+
+For all `POST` requests that create resources or trigger payments, you can pass an `Idempotency-Key` header containing a unique UUID. If a request fails mid-flight and you retry it with the same key, the API returns the original response instead of processing the operation a second time — preventing duplicate charges.
+
+```bash
+curl https://api.getitaja.com/v1/subscriptions \
+  -X POST \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: e7b3c2a1-4f5d-4e6b-9c8d-0a1b2c3d4e5f" \
+  -d '{ "customer_id": "cust_abc", "plan_id": "plan_xyz" }'
+```
+
+<Note>
+  Idempotency keys expire after 24 hours. Use a fresh UUID for each logically distinct operation.
+</Note>
+
+## Sandbox vs Production
+
+Itaja uses a single API endpoint for both testing and production. The type of API key you supply determines the behavior:
+
+| Key Prefix | Environment | Behavior |
+|---|---|---|
+| `test_` | Sandbox | Requests are processed normally but **no real payments** are initiated |
+| `live_` | Production | Real mobile money transactions are executed; requires business verification |
+
+You can use your test key freely during development and CI without risk of charging real accounts. Switch to your live key only when you are ready to go live. See [Authentication](/api-reference/authentication) for details on generating and managing both key types.

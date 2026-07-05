@@ -1,0 +1,73 @@
+---
+title: "Track Revenue and Growth with Analytics"
+sidebarTitle: "Analytics"
+description: "Use Itaja's analytics dashboard to monitor revenue, payment success rates, subscriber growth, and churn — and export reports for your business."
+---
+
+Growing a subscription business requires more than collecting payments — it requires understanding what is working and catching problems before they compound. Itaja's analytics dashboard gives you a real-time view of your revenue, payment performance, and subscriber trends so you can make data-driven decisions, spot churn early, and demonstrate growth to stakeholders. Every metric is updated automatically as payments process and subscriptions change state.
+
+## Dashboard Overview
+
+When you open the [Itaja dashboard](https://app.getitaja.com) and navigate to **Analytics**, four key metrics appear at the top of the page:
+
+- **Total Revenue** — Your cumulative collected revenue expressed in your account's primary currency. This figure updates with every successful payment.
+- **Success Rate** — The percentage of all payment attempts that completed successfully. Aim to keep this at 90% or above; a lower rate signals that reminders or retry settings may need adjustment.
+- **Active Subscribers** — The current count of subscriptions in either `active` or `trialing` state. Use this as your primary pulse on the health of your recurring revenue base.
+- **Monthly Growth** — The month-over-month percentage change in subscriber count. A positive number means you are adding net new subscribers faster than you are losing them.
+
+## Revenue Reports
+
+Navigate to **Analytics → Revenue** to explore your earnings over time. Use the view toggle to switch between **Daily**, **Weekly**, and **Monthly** granularity depending on whether you need a short-term snapshot or a long-range trend.
+
+To drill into a specific product line, use the **Plan** filter to isolate revenue from a single plan. Use the **Compare period** toggle to overlay the previous equivalent period alongside the current one — for example, this month versus last month — so you can immediately see whether revenue is accelerating or contracting.
+
+## Payment Analytics
+
+Navigate to **Analytics → Payments** to see a breakdown of every payment attempt in your account.
+
+- **Success vs. failed** — A chart showing the volume and value of successful payments alongside failed attempts over your selected time range.
+- **Retry success rate** — The percentage of initially failed payments that Itaja subsequently collected through automatic retries. A high retry success rate means your retry configuration is working well.
+- **Failure reason breakdown** — A table that categorises failed payments by root cause: **Insufficient funds**, **Timeout**, and **Provider error**. Use this breakdown to decide whether to adjust reminder timing (for insufficient funds failures), retry intervals (for timeouts), or escalate technical issues with a provider.
+
+## Subscriber Analytics
+
+Navigate to **Analytics → Subscribers** to understand how your subscriber base is evolving.
+
+- **New vs. churned** — A side-by-side view of subscribers gained and subscribers lost in each period, so you can see whether your acquisition is outpacing churn.
+- **Net subscriber growth chart** — A single cumulative line that rises when you gain more subscribers than you lose and falls when churn dominates. This is the clearest signal of overall business trajectory.
+- **Cohort retention** — A heatmap showing what percentage of subscribers who joined in a given month are still active in each subsequent month. Use cohort retention to identify whether certain acquisition periods or plan types lead to longer-lasting subscribers.
+
+## Exporting Reports
+
+To download your data for external analysis, board presentations, or accounting purposes:
+
+<Steps>
+  <Step title="Open the Export tool">
+    Go to **Analytics → Export** in the dashboard.
+  </Step>
+  <Step title="Set the date range">
+    Use the date picker to select the start and end dates for the report.
+  </Step>
+  <Step title="Choose the data type">
+    Select **Revenue**, **Payments**, or **Subscribers** depending on what you need to export.
+  </Step>
+  <Step title="Select the format">
+    Choose **CSV** for use in spreadsheet tools or data pipelines, or **PDF** for a formatted report suitable for sharing with stakeholders.
+  </Step>
+  <Step title="Download the file">
+    Click **Download**. Itaja generates the file and starts the download immediately.
+  </Step>
+</Steps>
+
+## API Access to Analytics
+
+If you embed business metrics in your own internal dashboard or data warehouse, you can pull summary analytics programmatically from the `/v1/analytics` endpoint. Authenticate all requests with your Bearer token the same way you would any other Itaja API call. See the [API Reference](/api-reference/introduction) for full details on available query parameters and response shapes.
+
+```bash
+curl https://api.getitaja.com/v1/analytics \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+<Tip>
+  For real-time data pipelines, set up a webhook listener on your server to receive payment events as they happen. Each successful or failed payment triggers an event that you can forward directly to your data warehouse — giving you up-to-the-minute accuracy without polling the API. See the Webhooks guide to get started.
+</Tip>

@@ -1,0 +1,70 @@
+---
+title: "Set Up Your Itaja Business Account"
+sidebarTitle: "Account Setup"
+description: "Configure your Itaja account, verify your business, connect mobile money providers, and invite team members to your dashboard."
+---
+
+Before you start collecting payments, you need to configure your Itaja account for your business. This involves verifying your business identity so you can process live transactions, connecting the mobile money providers your customers use, and setting up your team with the right level of access. This page walks you through each step so your account is ready before you write a single line of integration code.
+
+## Creating Your Account
+
+Navigate to [getitaja.com](https://getitaja.com) and click **Sign Up**. Enter your business email address, choose a secure password, and submit the registration form. Itaja immediately sends a verification email to the address you provided — open it and click **Verify Email** to confirm your identity and activate your account.
+
+Once verified, log in to the Itaja dashboard. Your account starts in **test mode**, which gives you full access to the platform — plans, customers, subscriptions, analytics — without processing real money. Test mode is ideal for building and validating your integration before you go live.
+
+## Business Verification
+
+Itaja requires business verification before you can switch to live mode and collect real payments from customers. Verification protects your business, your customers, and the integrity of the mobile money networks Itaja operates on.
+
+To complete verification, navigate to **Settings → Business Verification** and upload the following documents:
+
+- Your business registration certificate or certificate of incorporation
+- A government-issued ID for the primary account holder
+- Proof of your registered business address (utility bill or bank statement dated within 90 days)
+
+Itaja's compliance team reviews submissions within one to two business days. You receive an email notification once your account is approved for live payments. While you wait, you can continue building and testing your full integration in sandbox mode — no verification is required to use test mode.
+
+## Dashboard Overview
+
+After you log in, the main dashboard gives you an at-a-glance view of your subscription business health. The top-level metrics cards display:
+
+- **Total Revenue** — The cumulative amount collected across all successful payments in the selected period
+- **Success Rate** — The percentage of payment attempts that completed successfully, helping you gauge collection efficiency
+- **Active Subscribers** — The number of subscriptions currently in an active billing state
+- **Monthly Growth** — The net change in active subscribers compared to the previous month, expressed as a percentage
+
+Itaja displays revenue figures in the local currency relevant to each transaction. Supported currencies include FCFA (XOF/XAF), Nigerian Naira (NGN), Kenyan Shilling (KES), Ghanaian Cedi (GHS), and others across all supported markets. Use the currency selector in the top-right corner of the dashboard to filter your analytics view by a specific currency.
+
+## API Keys
+
+Itaja provides two types of API keys to separate your development and production environments cleanly:
+
+- **Test keys** (prefixed `itaja_test_`) — Use these during development and integration testing. Requests made with a test key never trigger real mobile money charges.
+- **Live keys** (prefixed `itaja_live_`) — Use these only in your production environment. Requests made with a live key initiate real charges on your customers' mobile money accounts.
+
+To view and manage your API keys, go to **Settings → API Keys** in the dashboard. You can generate a new key at any time. To rotate a key safely, generate the new key first, update your environment variables or secrets manager with the new value, verify your integration is working correctly, and then revoke the old key. This zero-downtime rotation ensures no payment requests are interrupted during the transition.
+
+<Warning>
+  Never share your live API key publicly or commit it to source control. Use environment variables to store credentials securely, and restrict access to your live key to only the production systems that require it.
+</Warning>
+
+## Team Members
+
+If you work with colleagues — developers, analysts, or other operators — you can invite them to your Itaja account with role-based access. Navigate to **Settings → Team** and click **Invite Member**. Enter their email address and select one of the following roles:
+
+- **Admin** — Full access to all account settings, billing, API keys, team management, and live data. Grant this role only to trusted stakeholders who need complete control.
+- **Developer** — Access to API keys, webhook configuration, integration settings, and test mode. This role is designed for engineers building or maintaining the Itaja integration.
+- **Analyst** — Read-only access to the analytics dashboard, payment history, and subscriber reports. This role is suitable for business intelligence, finance, or operations team members who need visibility without the ability to modify account settings.
+
+Invited team members receive an email with a link to join your organization. You can revoke access or change a member's role at any time from the **Settings → Team** page.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Follow the step-by-step guide to create your first plan, add a customer, and collect your first payment.
+  </Card>
+  <Card title="Creating Plans" icon="file-invoice-dollar" href="/guides/creating-plans">
+    Learn how to structure billing plans for different products, pricing tiers, and billing intervals.
+  </Card>
+</CardGroup>

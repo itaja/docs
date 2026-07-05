@@ -1,0 +1,70 @@
+---
+title: "Configure Smart Payment Reminders"
+sidebarTitle: "Reminders"
+description: "Set up automated SMS reminders that prompt subscribers to top up their mobile money wallets before billing, reducing failed payments and churn."
+---
+
+Payment failures in mobile money most often happen not because a customer wants to cancel, but because their wallet simply ran out of funds before the billing date. Itaja's smart reminder system addresses this directly by sending your subscribers an automated SMS prompt before each charge, giving them time to top up and ensuring your payment success rate stays high.
+
+## How Reminders Work
+
+When a subscription billing date approaches, Itaja checks the configured reminder schedule and sends an SMS to the customer's registered mobile number. The message tells the customer their upcoming charge amount and date and asks them to ensure their wallet holds sufficient funds. You can configure reminders to fire 1, 2, or 3 days before the billing date — or all three — to maximise the chance that customers act in time.
+
+Itaja delivers reminders through the same mobile network the customer's number is registered on, so messages arrive as standard SMS without requiring a smartphone or internet connection.
+
+## Configuring Reminders
+
+<Steps>
+  <Step title="Open Reminder settings">
+    Log in to the [Itaja dashboard](https://app.getitaja.com), click **Settings** in the left sidebar, and select **Reminders**.
+  </Step>
+  <Step title="Enable pre-billing reminders">
+    Toggle on **Pre-billing reminders** to activate the feature for all active subscriptions in your account.
+  </Step>
+  <Step title="Choose the send timing">
+    Select how many days before the billing date you want Itaja to send the reminder: **1 day**, **2 days**, or **3 days**. You can enable multiple options to send reminders on more than one day.
+  </Step>
+  <Step title="Customize the message template (optional)">
+    Expand the **Message Template** section to edit the default SMS copy. Use the available template variables to personalise each message (see [Custom Message Templates](#custom-message-templates) below).
+  </Step>
+  <Step title="Save your settings">
+    Click **Save**. Itaja will apply the new configuration to all upcoming billing cycles immediately.
+  </Step>
+</Steps>
+
+## Custom Message Templates
+
+When writing a custom template, use any of the following variables. Itaja replaces each variable with the subscriber's real data before sending the SMS.
+
+| Variable | Description |
+|---|---|
+| `{{customer_name}}` | The customer's full name as stored in their record |
+| `{{amount}}` | The billing amount for their plan |
+| `{{currency}}` | The currency code (e.g., GHS, NGN, XOF) |
+| `{{plan_name}}` | The name of the plan the customer is subscribed to |
+| `{{billing_date}}` | The date of the upcoming charge (formatted DD/MM/YYYY) |
+
+The default template Itaja uses is:
+
+> Hi `{{customer_name}}`, your `{{plan_name}}` subscription of `{{amount}}` `{{currency}}` will be charged on `{{billing_date}}`. Please ensure your wallet has sufficient funds.
+
+Keep your custom messages concise. Standard SMS messages are capped at 160 characters; longer messages will be split into multi-part SMS and may incur additional delivery costs.
+
+## Failed Payment Notifications
+
+When a payment attempt fails — for example, because a wallet still had insufficient funds despite the reminder — Itaja automatically sends the customer a follow-up SMS. This message informs them that the charge was unsuccessful and tells them when Itaja will retry. This keeps customers informed and reduces support requests while giving them the opportunity to top up before the next attempt.
+
+You can view and customise the failed payment SMS template in **Settings → Reminders** under the **Failed Payment** section.
+
+## Reminder Analytics
+
+To monitor how well your reminders are performing, navigate to **Analytics → Reminders** in the dashboard. There you can see:
+
+- **Delivery rate** — the percentage of reminder SMS messages successfully delivered to subscribers
+- **Opt-out rate** — the percentage of subscribers who have replied STOP and are no longer receiving reminders
+
+Review these metrics regularly. A high opt-out rate may indicate that your message frequency or tone needs adjustment. A low delivery rate may point to phone number quality issues in your customer records.
+
+<Note>
+  Customers can opt out of reminders at any time by replying **STOP** to any SMS they receive from Itaja. Itaja records and respects all opt-outs automatically — you do not need to handle this in your application.
+</Note>

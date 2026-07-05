@@ -1,0 +1,132 @@
+---
+title: "Frequently Asked Questions About Itaja"
+sidebarTitle: "FAQ"
+description: "Answers to common questions about Itaja pricing, mobile money providers, subscription management, API access, and account setup."
+---
+
+Whether you're evaluating Itaja for your business or already building your integration, this page answers the most common questions about getting started, managing payments, connecting your app, and keeping your account secure. If you don't find what you're looking for here, reach out to the team at [elikem@getitaja.com](mailto:elikem@getitaja.com).
+
+## Getting Started
+
+<AccordionGroup>
+  <Accordion title="How do I sign up for Itaja?">
+    You can get started in two ways. Visit [getitaja.com](https://getitaja.com) to create an account directly, or [book a demo](https://getitaja.com/book-demo) if you'd like a guided walkthrough of the platform before committing. During onboarding, you'll provide your business details so the team can verify your account and enable live payment collection.
+  </Accordion>
+
+  <Accordion title="Is there a free trial?">
+    Yes. Itaja provides a sandbox environment that you can use for free without any business verification. In sandbox mode, you can create plans, simulate subscriptions, and test your entire integration using test API keys and test phone numbers — no real money moves. When you're ready to collect live payments, you'll need to complete business verification to activate your live account.
+
+    <Tip>
+      Test API keys are available immediately after sign-up, so you can start building your integration right away.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="What countries does Itaja support?">
+    Itaja currently supports businesses and subscribers across 19 countries in Africa. See the full list of supported countries, including coverage details and available providers per country, on the [Supported Countries](/integrations/supported-countries) page.
+  </Accordion>
+
+  <Accordion title="What mobile money providers are supported?">
+    Itaja integrates with all major mobile money networks across its supported markets, including MTN, Orange, Airtel, M-Pesa, Wave, and more. For the complete provider list broken down by country, visit the [Supported Providers](/integrations/supported-providers) page.
+  </Accordion>
+</AccordionGroup>
+
+## Payments & Billing
+
+<AccordionGroup>
+  <Accordion title="What happens when a payment fails?">
+    Itaja automatically retries failed payments on a smart schedule — at **1 day**, **3 days**, and **7 days** after the initial failure. In parallel, Itaja sends smart reminders to your subscriber at each retry interval, prompting them to ensure their wallet is funded or their details are up to date. If all three retries fail, the subscription moves to `past_due` status and you receive a webhook notification so you can take action.
+
+    <Note>
+      You can also manually trigger a payment retry at any time from the subscription detail page in your dashboard.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Can I set up a free trial period for a plan?">
+    Yes. When creating a plan via the API, set the `trial_days` parameter to the number of days you want the trial to last. Subscribers on trial plans won't be charged until the trial period ends, at which point Itaja automatically initiates the first billing cycle.
+  </Accordion>
+
+  <Accordion title="What currencies does Itaja support?">
+    Itaja supports the following currencies:
+
+    | Currency | Code |
+    |---|---|
+    | West African CFA franc (BCEAO) | XOF |
+    | Central African CFA franc | XAF |
+    | Nigerian Naira | NGN |
+    | Ghanaian Cedi | GHS |
+    | Kenyan Shilling | KES |
+    | Ugandan Shilling | UGX |
+    | Rwandan Franc | RWF |
+    | Tanzanian Shilling | TZS |
+    | Zambian Kwacha | ZMW |
+    | Guinean Franc | GNF |
+    | Congolese Franc | CDF |
+    | Malawian Kwacha | MWK |
+
+    Each plan is denominated in a single currency. Make sure you select the currency that matches the mobile money market you're billing in.
+  </Accordion>
+
+  <Accordion title="How does Itaja handle proration when a customer changes plans?">
+    When a subscriber upgrades or downgrades mid-cycle, Itaja calculates a prorated charge based on the remaining time in the current billing period and bills it immediately. The subscriber then moves onto the new plan's regular billing schedule from their next renewal date.
+  </Accordion>
+
+  <Accordion title="Can customers pause their own subscriptions?">
+    Itaja does not offer a customer-facing self-service portal. Subscription pausing is available, but it must be triggered by your application calling the Itaja API on the customer's behalf. This gives you full control over the pause and resume flow within your own product experience.
+  </Accordion>
+</AccordionGroup>
+
+## API & Integration
+
+<AccordionGroup>
+  <Accordion title="How do I get API credentials?">
+    After logging in to your Itaja dashboard, navigate to **Settings → API Keys**. You'll find both your test and live API keys there. Copy the key you need and include it in the `Authorization` header of every API request as `Bearer YOUR_KEY`.
+
+    <Warning>
+      Never expose your live API key in client-side code or public repositories. Treat it like a password.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Is there a sandbox environment?">
+    Yes. Itaja's sandbox environment is fully isolated from production — no real payments are processed. To use it, switch to your test API keys in **Settings → API Keys**. The dashboard provides a set of test phone numbers you can use to simulate successful payments, failures, and pending states without touching real mobile money wallets.
+
+    <Tip>
+      You can access the sandbox immediately after creating your account, before completing business verification.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Are there official SDKs?">
+    Yes. Itaja provides official SDKs for the following languages:
+
+    - **Node.js** — install via npm with `npm install @itaja/sdk`
+    - **Python** — available via PyPI
+    - **PHP** — available via Packagist
+
+    Each SDK wraps the REST API and handles authentication, request serialization, and error parsing for you. Check the SDK documentation for installation instructions and usage examples.
+  </Accordion>
+
+  <Accordion title="How do webhooks work?">
+    When a significant event occurs — such as a payment succeeding, a payment failing, or a subscription changing state — Itaja sends a real-time HTTP `POST` request to the endpoint URL you configure in your dashboard. Your endpoint should return an HTTP `200` response to acknowledge receipt. If Itaja doesn't receive a `200`, it retries delivery automatically.
+
+    For the full list of events, payload schemas, and signature verification instructions, see the [Webhooks reference](/api-reference/webhooks).
+  </Accordion>
+</AccordionGroup>
+
+## Account & Security
+
+<AccordionGroup>
+  <Accordion title="How do I invite team members to my Itaja account?">
+    Go to **Settings → Team → Invite** in your dashboard. Enter your team member's email address and assign them a role. They'll receive an email invitation to join your workspace. You can manage and revoke team member access from the same page at any time.
+  </Accordion>
+
+  <Accordion title="How do I rotate my API key?">
+    Navigate to **Settings → API Keys** and click **Regenerate** next to the key you want to rotate. Itaja immediately invalidates the old key and issues a new one. Make sure you update your key in all environments and services before regenerating, to avoid unexpected authentication failures.
+
+    <Warning>
+      Regenerating a key is irreversible. Your old key stops working the moment you regenerate — there is no grace period.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Is my data secure?">
+    Yes. Itaja is built with enterprise-grade security practices. All data transmitted between your application and Itaja's servers is encrypted in transit using TLS. All stored data — including customer records, payment history, and API credentials — is encrypted at rest. Access to sensitive resources is scoped by API key permissions, and your dashboard supports team-level role management to limit access to only the people who need it.
+  </Accordion>
+</AccordionGroup>

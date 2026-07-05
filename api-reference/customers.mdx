@@ -1,0 +1,220 @@
+---
+title: "Customers API — Create and Manage Customers"
+sidebarTitle: "Customers"
+description: "REST API reference for Itaja customers. Register customers with their mobile money phone numbers and provider codes for subscription billing."
+---
+
+A **customer** represents a person or account you want to bill through Itaja. Each customer record holds a mobile money phone number and the corresponding provider code that Itaja uses to initiate charges. You register a customer once and then attach them to one or more billing plans via subscriptions. Optionally, you can store a customer's email address and any custom `metadata` — such as your internal user ID — to make it easier to reconcile Itaja records with your own database.
+
+---
+
+## Create a customer
+
+`POST /customers`
+
+Registers a new customer in Itaja. You must supply a valid mobile money phone number in E.164 format and the matching provider code for that number.
+
+### Body parameters
+
+<ParamField body="name" type="string" required>
+  The customer's full name (e.g., `"Kofi Mensah"`). This name appears on payment receipts and in the dashboard.
+</ParamField>
+
+<ParamField body="phone" type="string" required>
+  The customer's mobile money phone number in **E.164 format** (e.g., `"+233540000000"`). The number must be registered with the provider specified in `provider`.
+</ParamField>
+
+<ParamField body="provider" type="string" required>
+  The mobile money provider code that corresponds to the customer's phone number. Accepted values: `orange_sn`, `orange_ci`, `orange_ml`, `orange_cm`, `orange_gn`, `mtn_gh`, `mtn_ug`, `mtn_rw`, `mtn_cm`, `mtn_ng`, `airtel_ke`, `airtel_ug`, `airtel_zm`, `airtel_mw`, `mpesa_ke`, `mpesa_tz`, `wave_sn`, `wave_ci`, `moov_bj`, `moov_tg`, `moov_bf`, `moov_ga`, `flooz_tg`, `mpesa_cd`, `airtel_ne`.
+</ParamField>
+
+<ParamField body="email" type="string">
+  The customer's email address. Optional — used for sending payment notifications when configured.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  A free-form key-value object for storing any additional data you associate with this customer (e.g., `{"user_id": "usr_99", "tier": "premium"}`). Values must be strings or numbers.
+</ParamField>
+
+### Request example
+
+```bash
+curl -X POST https://api.getitaja.com/v1/customers \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Kofi Mensah", "phone": "+233540000000", "provider": "mtn_gh"}'
+```
+
+### Response `201 Created`
+
+```json
+{
+  "data": {
+    "id": "cust_xyz789",
+    "name": "Kofi Mensah",
+    "phone": "+233540000000",
+    "provider": "mtn_gh",
+    "email": null,
+    "metadata": {},
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+<ResponseField name="data.id" type="string">
+  Unique identifier for the customer. Use this ID when creating subscriptions or filtering payments.
+</ResponseField>
+
+<ResponseField name="data.metadata" type="object">
+  The metadata object you provided at creation, or an empty object `{}` if none was supplied.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 timestamp of when the customer record was created.
+</ResponseField>
+
+---
+
+## List customers
+
+`GET /customers`
+
+Returns a paginated list of your customers. Filter by provider to segment customers by their mobile money network.
+
+### Query parameters
+
+<ParamField query="page" type="integer">
+  Page number to retrieve. Defaults to `1`.
+</ParamField>
+
+<ParamField query="per_page" type="integer">
+  Number of customers per page. Defaults to `20`. Maximum is `100`.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  Filter results to customers on a specific provider (e.g., `mtn_gh`). Omit to return customers across all providers.
+</ParamField>
+
+### Request example
+
+```bash
+curl 'https://api.getitaja.com/v1/customers?provider=mtn_gh&page=1&per_page=20' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": "cust_xyz789",
+      "name": "Kofi Mensah",
+      "phone": "+233540000000",
+      "provider": "mtn_gh",
+      "email": null,
+      "metadata": {},
+      "created_at": "2024-01-15T10:00:00Z"
+    }
+  ],
+  "meta": { "total": 1, "page": 1, "per_page": 20 }
+}
+```
+
+---
+
+## Retrieve a customer
+
+`GET /customers/:id`
+
+Fetches a single customer by their unique identifier.
+
+### Request example
+
+```bash
+curl https://api.getitaja.com/v1/customers/cust_xyz789 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "cust_xyz789",
+    "name": "Kofi Mensah",
+    "phone": "+233540000000",
+    "provider": "mtn_gh",
+    "email": null,
+    "metadata": {},
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Update a customer
+
+`PATCH /customers/:id`
+
+Updates one or more fields on an existing customer record. You can update `name`, `phone`, `provider`, `email`, or `metadata`.
+
+<Note>
+  If you update `phone` or `provider`, make sure the new combination is valid — Itaja uses these fields to route all future charges for this customer's subscriptions.
+</Note>
+
+### Request example
+
+```bash
+curl -X PATCH https://api.getitaja.com/v1/customers/cust_xyz789 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "kofi@example.com", "metadata": {"user_id": "usr_99"}}'
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "cust_xyz789",
+    "name": "Kofi Mensah",
+    "phone": "+233540000000",
+    "provider": "mtn_gh",
+    "email": "kofi@example.com",
+    "metadata": { "user_id": "usr_99" },
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+---
+
+## Delete a customer
+
+`DELETE /customers/:id`
+
+Permanently deletes a customer record from Itaja.
+
+<Warning>
+  You can only delete a customer who has **no active subscriptions**. Cancel all of the customer's active subscriptions before attempting to delete them, or the request will return a `409 Conflict` error.
+</Warning>
+
+### Request example
+
+```bash
+curl -X DELETE https://api.getitaja.com/v1/customers/cust_xyz789 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "cust_xyz789",
+    "deleted": true
+  }
+}
+```

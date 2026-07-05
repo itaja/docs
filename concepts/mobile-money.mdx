@@ -1,0 +1,97 @@
+---
+title: "Mobile Money Integration Overview"
+sidebarTitle: "Mobile Money"
+description: "Learn how Itaja connects to mobile money providers across Africa, how payment authorization works, and which provider codes to use in your API requests."
+---
+
+Mobile money is the dominant payment rail across Africa, with hundreds of millions of people using wallets like M-Pesa, MTN MoMo, Orange Money, and Wave to pay for goods and services daily. Itaja connects directly to 19+ mobile money providers across the continent, so you integrate once and bill customers regardless of which network they use or which country they're in. You never have to manage individual provider APIs, credentials, or reconciliation files — Itaja handles all of that for you.
+
+## How It Works
+
+Every recurring charge in Itaja follows the same authorization flow:
+
+1. **Itaja initiates the prompt.** When a billing date arrives (or you trigger a charge manually), Itaja sends a payment request to the customer's mobile money provider, specifying the amount, currency, and the customer's registered phone number.
+
+2. **The customer confirms.** The customer receives a push notification or USSD prompt on their phone. They approve the payment using their mobile money PIN, just as they would for any other mobile money transaction.
+
+3. **The provider settles the funds.** Once the customer confirms, the provider debits the customer's mobile money wallet and transfers the funds. Settlement times vary by provider but typically complete within seconds to a few minutes.
+
+4. **Itaja updates the payment status.** As soon as the provider confirms settlement, Itaja marks the payment as `succeeded` and fires a `payment.succeeded` webhook to your configured endpoint.
+
+<Info>
+Customers never need to enter card details or visit a checkout page. The entire flow happens on their phone through their existing mobile money app or USSD menu — a familiar, trusted experience for your users.
+</Info>
+
+## Provider Codes
+
+When making API requests that specify a payment provider, use the `provider` field with the exact code from the table below.
+
+| Provider | Country | Code |
+|---|---|---|
+| Orange Money | Senegal | `orange_sn` |
+| Orange Money | Ivory Coast | `orange_ci` |
+| Orange Money | Mali | `orange_ml` |
+| Orange Money | Cameroon | `orange_cm` |
+| MTN Mobile Money | Ghana | `mtn_gh` |
+| MTN Mobile Money | Uganda | `mtn_ug` |
+| MTN Mobile Money | Rwanda | `mtn_rw` |
+| MTN Mobile Money | Cameroon | `mtn_cm` |
+| MTN Mobile Money | Nigeria | `mtn_ng` |
+| Airtel Money | Kenya | `airtel_ke` |
+| Airtel Money | Uganda | `airtel_ug` |
+| Airtel Money | Zambia | `airtel_zm` |
+| M-Pesa | Kenya | `mpesa_ke` |
+| M-Pesa | Tanzania | `mpesa_tz` |
+| Wave | Senegal | `wave_sn` |
+| Wave | Ivory Coast | `wave_ci` |
+| Moov Money | Benin | `moov_bj` |
+| Moov Money | Togo | `moov_tg` |
+| Flooz | Togo | `flooz_tg` |
+
+<Tip>
+You can also retrieve the full list of active providers programmatically at any time by calling `GET /v1/providers`. The response includes each provider's code, supported currencies, and current operational status.
+</Tip>
+
+## Phone Number Format
+
+All phone numbers you pass to Itaja must be in **E.164 format**: a leading `+`, followed by the country code, followed by the subscriber number, with no spaces, dashes, or parentheses.
+
+```
++[country code][subscriber number]
+```
+
+**Examples:**
+
+| Country | Country Code | Example Number |
+|---|---|---|
+| Senegal | 221 | `+221700000000` |
+| Kenya | 254 | `+254712345678` |
+| Nigeria | 234 | `+2348012345678` |
+| Ghana | 233 | `+233241234567` |
+| Ivory Coast | 225 | `+2250700000000` |
+
+<Warning>
+Itaja rejects phone numbers that are not in E.164 format. If you store numbers in local format (e.g., `07XXXXXXXX`), normalize them to E.164 before sending them in API requests or when importing subscribers via the dashboard.
+</Warning>
+
+## Currency Support
+
+Each provider code maps to one or more supported currencies. The table below lists all currencies Itaja currently accepts:
+
+| Currency Code | Currency Name | Primary Region |
+|---|---|---|
+| `XOF` | West African CFA Franc | Senegal, Ivory Coast, Mali, Benin, Togo, Burkina Faso, Niger, Guinea |
+| `XAF` | Central African CFA Franc | Cameroon, Gabon, DR Congo |
+| `NGN` | Nigerian Naira | Nigeria |
+| `GHS` | Ghanaian Cedi | Ghana |
+| `KES` | Kenyan Shilling | Kenya |
+| `UGX` | Ugandan Shilling | Uganda |
+| `RWF` | Rwandan Franc | Rwanda |
+| `TZS` | Tanzanian Shilling | Tanzania |
+| `ZMW` | Zambian Kwacha | Zambia |
+
+When you create a Plan, set the `currency` field to the appropriate code for your target market. A single Itaja account can manage plans and subscriptions across multiple currencies simultaneously.
+
+<Note>
+In sandbox mode, no real charges are made. Use the test phone numbers provided in the dashboard to simulate payment flows, including successful payments, declines, and timeouts.
+</Note>

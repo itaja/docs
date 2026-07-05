@@ -1,0 +1,178 @@
+---
+title: "Payments API — Track and Manage Transactions"
+sidebarTitle: "Payments"
+description: "REST API reference for Itaja payments. Retrieve payment history, filter by status or subscription, and trigger manual payment retries."
+---
+
+Itaja creates a **payment** automatically on each billing date for every active subscription. You don't initiate payments directly — Itaja handles the timing, routes the charge to the correct mobile money provider, and records the outcome. This API lets you retrieve your payment history, monitor payment health, and manually retry a failed charge without waiting for the next scheduled billing attempt.
+
+---
+
+## List payments
+
+`GET /payments`
+
+Returns a paginated list of payments across all your subscriptions. Use the available filters to drill into specific time windows, customers, subscriptions, or payment outcomes.
+
+### Query parameters
+
+<ParamField query="subscription_id" type="string">
+  Return only payments linked to the specified subscription.
+</ParamField>
+
+<ParamField query="customer_id" type="string">
+  Return only payments for the specified customer.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by payment status. One of `pending`, `processing`, `succeeded`, `failed`, or `refunded`.
+</ParamField>
+
+<ParamField query="from" type="string">
+  Start of the date range in ISO 8601 format (e.g., `2024-01-01`). Returns payments created on or after this date.
+</ParamField>
+
+<ParamField query="to" type="string">
+  End of the date range in ISO 8601 format (e.g., `2024-01-31`). Returns payments created on or before this date.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Page number to retrieve. Defaults to `1`.
+</ParamField>
+
+<ParamField query="per_page" type="integer">
+  Number of payments per page. Defaults to `20`. Maximum is `100`.
+</ParamField>
+
+### Request example
+
+```bash
+curl 'https://api.getitaja.com/v1/payments?status=failed&page=1&per_page=20' \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "id": "pay_ghi789",
+      "subscription_id": "sub_def456",
+      "customer_id": "cust_xyz789",
+      "amount": 15000,
+      "currency": "XOF",
+      "status": "failed",
+      "failure_reason": "insufficient_funds",
+      "created_at": "2024-02-01T08:00:00Z"
+    }
+  ],
+  "meta": { "total": 1, "page": 1, "per_page": 20 }
+}
+```
+
+<ResponseField name="data[].id" type="string">
+  Unique identifier for the payment.
+</ResponseField>
+
+<ResponseField name="data[].status" type="string">
+  Current status of the payment. One of `pending`, `processing`, `succeeded`, `failed`, or `refunded`.
+</ResponseField>
+
+<ResponseField name="data[].failure_reason" type="string">
+  Present only when `status` is `failed`. See [Failure reasons](#failure-reasons) below.
+</ResponseField>
+
+<ResponseField name="meta.total" type="integer">
+  Total number of payments matching the query, across all pages.
+</ResponseField>
+
+---
+
+## Retrieve a payment
+
+`GET /payments/:id`
+
+Fetches a single payment by its unique identifier.
+
+### Request example
+
+```bash
+curl https://api.getitaja.com/v1/payments/pay_ghi789 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "pay_ghi789",
+    "subscription_id": "sub_def456",
+    "customer_id": "cust_xyz789",
+    "amount": 15000,
+    "currency": "XOF",
+    "status": "failed",
+    "failure_reason": "insufficient_funds",
+    "created_at": "2024-02-01T08:00:00Z"
+  }
+}
+```
+
+---
+
+## Retry a payment
+
+`POST /payments/:id/retry`
+
+Manually triggers a new charge attempt for a payment whose `status` is `failed`. This is useful when you know the root cause has been resolved — for example, a customer has topped up their mobile money wallet — and you don't want to wait for the next scheduled retry.
+
+<Note>
+  Only payments with `status: "failed"` can be retried. Attempting to retry a payment in any other status returns a `422 Unprocessable Entity` error.
+</Note>
+
+### Request example
+
+```bash
+curl -X POST https://api.getitaja.com/v1/payments/pay_ghi789/retry \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Response `200 OK`
+
+```json
+{
+  "data": {
+    "id": "pay_ghi789",
+    "subscription_id": "sub_def456",
+    "customer_id": "cust_xyz789",
+    "amount": 15000,
+    "currency": "XOF",
+    "status": "processing",
+    "failure_reason": null,
+    "created_at": "2024-02-01T08:00:00Z"
+  }
+}
+```
+
+<Tip>
+  After calling retry, listen for the `payment.succeeded` or `payment.failed` webhook event to know the outcome. The status transitions from `processing` once the provider confirms or rejects the charge.
+</Tip>
+
+---
+
+## Failure reasons
+
+When a payment fails, Itaja sets the `failure_reason` field to one of the following values:
+
+| Value | Description |
+|---|---|
+| `insufficient_funds` | The customer's mobile money wallet did not have enough balance to cover the charge. |
+| `timeout` | The provider did not respond within the expected window. |
+| `provider_error` | The mobile money provider returned an unexpected error. |
+| `invalid_phone` | The phone number on the customer record is not recognised by the provider. |
+| `account_blocked` | The customer's mobile money account is restricted or suspended by the provider. |
+
+<Note>
+  Use `failure_reason` to decide how to respond — for example, notify customers about `insufficient_funds` so they can top up, or contact support for persistent `provider_error` cases.
+</Note>
